@@ -1,5 +1,8 @@
 HOME = https://www.cs.auckland.ac.nz/~chaitin
 
+lisp: lisp.c
+	cc -O -o$@ $^
+
 download:
 	wget ${HOME}/lisp.c
 	for i in examples utm godel godel2 godel3 omega omega2 omega3; do \

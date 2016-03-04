@@ -33,4 +33,4 @@ download_ait:
 	diff <(./lisp < $*.l | grep -v Elapsed) <(grep -v Elapsed $*.r)
 
 tests:
-	for i in *.l; do make `basename $$i .l`.test; done
+	for i in unknowable/*.l; do make $${i%.l}.test; done

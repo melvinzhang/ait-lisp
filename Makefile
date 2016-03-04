@@ -1,6 +1,6 @@
 SHELL = /bin/bash
 
-lisp: lisp.c
+lisp: src/lisp.c
 	cc -O -o$@ $^
 
 LM = https://www.cs.auckland.ac.nz/~chaitin

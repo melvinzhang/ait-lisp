@@ -703,9 +703,9 @@ long compare(long x, long y) /* compare two decimal numbers */
  if (already_decided != '=') return already_decided;
  digit1 = car[x];
  digit2 = car[y];
- if (digit1 == digit2) return '=';
- if (digit1 <  digit2) return '<';
- if (digit1 >  digit2) return '>';
+ if (digit1 < digit2) return '<';
+ if (digit1 > digit2) return '>';
+ return '=';
 }
  
 long add1(long x) /* add 1 to decimal number */

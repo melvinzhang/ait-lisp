@@ -106,7 +106,7 @@ long read_char(void); /* read one character from Turing machine tape */
 long read_word(void); /* read word from Turing machine tape */
 long read_expr(long rparenokay); /* read s-exp from Turing machine tape */
  
-int main() /* lisp main program */
+int main(void) /* lisp main program */
 {
 time1 = time(NULL); /* start timer */
 printf("LISP Interpreter Run\n");

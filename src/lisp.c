@@ -411,7 +411,13 @@ long in_word(void) /* read word - skip comments */
 long in(long mexp, long rparenokay) /* input m-exp */
 {
    long w = in_word(), first, last, next, name, def, body, var_lst, i ;
-   if (w == right_paren) if (rparenokay) return w; else return nil;
+   if (w == right_paren) {
+       if (rparenokay) {
+           return w;
+       } else {
+           return nil;
+       }
+   }
    if (w == left_paren) { /* explicit list */
       first = last = cons(nil,nil);
       while ((next = in(mexp,1)) != right_paren)
@@ -954,7 +960,13 @@ long read_expr(long rparenokay) /* read s-exp from Turing machine tape */
 {
    long w = read_word(), first, last, next;
    if (w < 0) return w; /* error? */
-   if (w == right_paren) if (rparenokay) return w; else return nil;
+   if (w == right_paren) {
+       if (rparenokay) {
+           return w;
+       } else {
+           return nil;
+       }
+   }
    if (w == left_paren) { /* explicit list */
       first = last = cons(nil,nil);
       while ((next = read_expr(1)) != right_paren) {

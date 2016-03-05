@@ -1,5 +1,5 @@
 LISP Interpreter Run
- 
+
 [omega3.l]
  
 [Show that]
@@ -15,11 +15,11 @@ LISP Interpreter Run
 [displaying the length in bits of the binary prefix.]
 define (display-length-of-prefix prefix)
     cadr cons display length prefix cons prefix nil
- 
+
 define      display-length-of-prefix
-value       (lambda (prefix) (car (cdr (cons (display (length
+value       (lambda (prefix) (car (cdr (cons (display (length 
             prefix)) (cons prefix nil)))))
- 
+
  
 cadr try no-time-limit 'eval read-exp [Universal Turing machine U ---]
  
@@ -100,11 +100,11 @@ let (big prefix time bits-left-to-add)
 bits '           [Here is the data: an optimal program to compute n bits of Omega.]
  
 '(0 0 0 0  0 0 0 1)       [n = 8! Are these really the first 8 bits of Omega?]
- 
+
 expression  (car (cdr (try no-time-limit (' (eval (read-exp)))
-             (display (append (display-length-of-prefix (bits
+             (display (append (display-length-of-prefix (bits 
             (' ((' (lambda (count-halt) ((' (lambda (omega) ((
-            ' (lambda (w) ((' (lambda (n) ((' (lambda (w) (('
+            ' (lambda (w) ((' (lambda (n) ((' (lambda (w) ((' 
             (lambda (loop) ((' (lambda (<=rat) ((' (lambda (bi
             g) (loop 0))) (' (lambda (prefix time bits-left-to
             -add) (if (= 0 bits-left-to-add) (try time (' (eva
@@ -112,10 +112,10 @@ expression  (car (cdr (try no-time-limit (' (eval (read-exp)))
              (' (0))) time (- bits-left-to-add 1)) (big (appen
             d prefix (' (1))) time (- bits-left-to-add 1))))))
             ))) (' (lambda (x y) ((' (lambda (a) ((' (lambda (
-            b) ((' (lambda (c) ((' (lambda (d) (<= (* a d) (*
-            b c)))) (car (cdr (cdr y)))))) (car (debug y)))))
+            b) ((' (lambda (c) ((' (lambda (d) (<= (* a d) (* 
+            b c)))) (car (cdr (cdr y)))))) (car (debug y))))) 
             (car (cdr (cdr x)))))) (car (debug x)))))))) (' (l
-            ambda (k) ((' (lambda (x) (if (debug (<=rat w x))
+            ambda (k) ((' (lambda (x) (if (debug (<=rat w x)) 
             (big nil k n) (loop (+ k 1))))) (debug (omega (deb
             ug k))))))))) (debug (cons (base2-to-10 w) (cons /
              (cons (^ 2 n) nil))))))) (length w)))) (debug (ev
@@ -584,12 +584,12 @@ value       (failure out-of-data () failure out-of-data () fai
              out-of-data () failure out-of-data () failure out
             -of-data () failure out-of-data () failure out-of-
             data () failure out-of-data () failure out-of-data
-             () failure out-of-data () failure out-of-data ()
+             () failure out-of-data () failure out-of-data () 
             failure out-of-data () failure out-of-data () fail
-            ure out-of-data () failure out-of-data () failure
+            ure out-of-data () failure out-of-data () failure 
             out-of-data () failure out-of-data () failure out-
             of-data () failure out-of-data () failure out-of-d
-            ata () failure out-of-data () failure out-of-data
+            ata () failure out-of-data () failure out-of-data 
             () failure out-of-data () failure out-of-data () f
             ailure out-of-data () failure out-of-data () failu
             re out-of-data () failure out-of-data () failure o
@@ -607,12 +607,12 @@ value       (failure out-of-data () failure out-of-data () fai
              out-of-data () failure out-of-data () failure out
             -of-data () failure out-of-data () failure out-of-
             data () failure out-of-data () failure out-of-data
-             () failure out-of-data () failure out-of-data ()
+             () failure out-of-data () failure out-of-data () 
             failure out-of-data () failure out-of-data () fail
-            ure out-of-data () failure out-of-data () failure
+            ure out-of-data () failure out-of-data () failure 
             out-of-data () failure out-of-data () failure out-
             of-data () failure out-of-data () failure out-of-d
-            ata () failure out-of-data () failure out-of-data
+            ata () failure out-of-data () failure out-of-data 
             () failure out-of-data () failure out-of-data () f
             ailure out-of-data () failure out-of-data () failu
             re out-of-data () failure out-of-data () failure o
@@ -630,12 +630,12 @@ value       (failure out-of-data () failure out-of-data () fai
              out-of-data () failure out-of-data () failure out
             -of-data () failure out-of-data () failure out-of-
             data () failure out-of-data () failure out-of-data
-             () failure out-of-data () failure out-of-data ()
+             () failure out-of-data () failure out-of-data () 
             failure out-of-data () failure out-of-data () fail
-            ure out-of-data () failure out-of-data () failure
+            ure out-of-data () failure out-of-data () failure 
             out-of-data () failure out-of-data () failure out-
             of-data () failure out-of-data () failure out-of-d
-            ata () failure out-of-data () failure out-of-data
+            ata () failure out-of-data () failure out-of-data 
             () failure out-of-data () failure out-of-data () f
             ailure out-of-data () failure out-of-data () failu
             re out-of-data () failure out-of-data () failure o
@@ -653,12 +653,12 @@ value       (failure out-of-data () failure out-of-data () fai
              out-of-data () failure out-of-data () failure out
             -of-data () failure out-of-data () failure out-of-
             data () failure out-of-data () failure out-of-data
-             () failure out-of-data () failure out-of-data ()
+             () failure out-of-data () failure out-of-data () 
             failure out-of-data () failure out-of-data () fail
-            ure out-of-data () failure out-of-data () failure
+            ure out-of-data () failure out-of-data () failure 
             out-of-data () failure out-of-data () failure out-
             of-data () failure out-of-data () failure out-of-d
-            ata () failure out-of-data () failure out-of-data
+            ata () failure out-of-data () failure out-of-data 
             () failure out-of-data () failure out-of-data () f
             ailure out-of-data () failure out-of-data () failu
             re out-of-data () failure out-of-data () failure o
@@ -676,13 +676,13 @@ value       (failure out-of-data () failure out-of-data () fai
              out-of-data () failure out-of-data () failure out
             -of-data () failure out-of-data () failure out-of-
             data () failure out-of-data () failure out-of-data
-             () failure out-of-data () failure out-of-data ()
+             () failure out-of-data () failure out-of-data () 
             failure out-of-data () failure out-of-data () fail
-            ure out-of-data () failure out-of-data () failure
+            ure out-of-data () failure out-of-data () failure 
             out-of-data () failure out-of-data () failure out-
             of-data () failure out-of-data () failure out-of-d
             ata () failure out-of-data ())
- 
+
 End of LISP Run
- 
-Elapsed time is 2 seconds.
+
+Elapsed time is 0 seconds.

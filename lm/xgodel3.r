@@ -1,5 +1,5 @@
 LISP Interpreter Run
- 
+
 [godel3.l]
  
 [Show that a formal system of complexity N]
@@ -18,32 +18,32 @@ define (number-of-bits-determined w)
       if = X car w
          0
          1
- 
+
 define      number-of-bits-determined
 value       (lambda (w) (if (atom w) 0 (+ (number-of-bits-dete
             rmined (cdr w)) (if (= X (car w)) 0 1))))
- 
+
 [Test it.]
 (number-of-bits-determined '(X X X))
- 
+
 expression  (number-of-bits-determined (' (X X X)))
 value       0
- 
+
 (number-of-bits-determined '(1 X X))
- 
+
 expression  (number-of-bits-determined (' (1 X X)))
 value       1
- 
+
 (number-of-bits-determined '(1 X 0))
- 
+
 expression  (number-of-bits-determined (' (1 X 0)))
 value       2
- 
+
 (number-of-bits-determined '(1 1 0))
- 
+
 expression  (number-of-bits-determined (' (1 1 0)))
 value       3
- 
+
  
 [Merge bits of data into unknown bits of an omega.]
 define (supply-missing-bits w)
@@ -52,12 +52,12 @@ define (supply-missing-bits w)
             read-bit
             car w
     (supply-missing-bits cdr w)
- 
+
 define      supply-missing-bits
 value       (lambda (w) (if (atom w) nil (cons (if (= X (car w
             )) (read-bit) (car w)) (supply-missing-bits (cdr w
             )))))
- 
+
 [Test it.]
 cadr try no-time-limit '
 let (supply-missing-bits w)
@@ -68,14 +68,14 @@ let (supply-missing-bits w)
     (supply-missing-bits cdr w)
 (supply-missing-bits '(0 0 X 0 0 X 0 0 X))
 '(1 1 1)
- 
+
 expression  (car (cdr (try no-time-limit (' ((' (lambda (suppl
             y-missing-bits) (supply-missing-bits (' (0 0 X 0 0
              X 0 0 X))))) (' (lambda (w) (if (atom w) nil (con
             s (if (= X (car w)) (read-bit) (car w)) (supply-mi
             ssing-bits (cdr w)))))))) (' (1 1 1)))))
 value       (0 0 1 0 0 1 0 0 1)
- 
+
 cadr try no-time-limit '
 let (supply-missing-bits w)
     if atom w nil
@@ -85,14 +85,14 @@ let (supply-missing-bits w)
     (supply-missing-bits cdr w)
 (supply-missing-bits '(1 1 X 1 1 X 1 1 1))
 '(0 0)
- 
+
 expression  (car (cdr (try no-time-limit (' ((' (lambda (suppl
             y-missing-bits) (supply-missing-bits (' (1 1 X 1 1
              X 1 1 1))))) (' (lambda (w) (if (atom w) nil (con
             s (if (= X (car w)) (read-bit) (car w)) (supply-mi
             ssing-bits (cdr w)))))))) (' (0 0)))))
 value       (1 1 0 1 1 0 1 1 1)
- 
+
  
 [Examine omegas in list w to see if in any one of them]
 [the number of bits that are determined is greater than n.]
@@ -102,38 +102,38 @@ define (examine w n)
     if < n (number-of-bits-determined car w)
        car w
        (examine cdr w n)
- 
+
 define      examine
 value       (lambda (w n) (if (atom w) false (if (< n (number-
             of-bits-determined (car w))) (car w) (examine (cdr
              w) n))))
- 
+
 [Test it.]
 (examine '((1 1)(1 1 1)) 0)
- 
+
 expression  (examine (' ((1 1) (1 1 1))) 0)
 value       (1 1)
- 
+
 (examine '((1 1)(1 1 1)) 1)
- 
+
 expression  (examine (' ((1 1) (1 1 1))) 1)
 value       (1 1)
- 
+
 (examine '((1 1)(1 1 1)) 2)
- 
+
 expression  (examine (' ((1 1) (1 1 1))) 2)
 value       (1 1 1)
- 
+
 (examine '((1 1)(1 1 1)) 3)
- 
+
 expression  (examine (' ((1 1) (1 1 1))) 3)
 value       false
- 
+
 (examine '((1 1)(1 1 1)) 4)
- 
+
 expression  (examine (' ((1 1) (1 1 1))) 4)
 value       false
- 
+
  
 [This is an identity function with the size-effect of]
 [displaying the number of bits in a binary string.]
@@ -141,11 +141,11 @@ define (display-number-of-bits string)
     cadr cons display length string
          cons string
               nil
- 
+
 define      display-number-of-bits
-value       (lambda (string) (car (cdr (cons (display (length
+value       (lambda (string) (car (cdr (cons (display (length 
             string)) (cons string nil)))))
- 
+
  
 [This is the universal Turing machine U followed by its program.]
 cadr try no-time-limit 'eval read-exp
@@ -218,14 +218,14 @@ bits 'display '(1 X 0)
 ) [end of prefix and formal axiomatic system]
  
 '(1) [Missing bit of Omega that is needed.]
- 
+
 expression  (car (cdr (try no-time-limit (' (eval (read-exp)))
              (append (display-number-of-bits (append (display-
             number-of-bits (bits (' ((' (lambda (number-of-bit
             s-determined) ((' (lambda (supply-missing-bits) ((
             ' (lambda (examine) ((' (lambda (loop) (loop 0 nil
             ))) (' (lambda (t fas) ((' (lambda (v) ((' (lambda
-             (s) (if s (supply-missing-bits s) (if (= (car v)
+             (s) (if s (supply-missing-bits s) (if (= (car v) 
             success) failure (if (= (car (cdr v)) out-of-data)
              (loop t (append fas (cons (read-bit) nil))) (if (
             = (car (cdr v)) out-of-time) (loop (+ t 1) fas) un
@@ -235,10 +235,10 @@ expression  (car (cdr (try no-time-limit (' (eval (read-exp)))
             s))))))))) (' (lambda (w n) (if (atom w) false (if
              (< 1 (number-of-bits-determined (car w))) (car w)
              (examine (cdr w) n)))))))) (' (lambda (w) (if (at
-            om w) nil (cons (if (= X (car w)) (read-bit) (car
+            om w) nil (cons (if (= X (car w)) (read-bit) (car 
             w)) (supply-missing-bits (cdr w))))))))) (' (lambd
             a (w) (if (atom w) 0 (+ (number-of-bits-determined
-             (cdr w)) (if (= X (car w)) 0 1))))))))) (bits ('
+             (cdr w)) (if (= X (car w)) 0 1))))))))) (bits (' 
             (display (' (1 X 0))))))) (' (1))))))
 display     6912
 display     7088
@@ -1501,7 +1501,7 @@ debug       (0 0 1 0 1 0 0 0 0 1 1 0 0 1 0 0 0 1 1 0 1 0 0 1 0
 debug       (success (1 X 0) ((1 X 0)))
 debug       7088
 value       (1 1 0)
- 
+
 End of LISP Run
- 
-Elapsed time is 1 seconds.
+
+Elapsed time is 0 seconds.

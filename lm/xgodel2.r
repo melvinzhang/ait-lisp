@@ -1,5 +1,5 @@
 LISP Interpreter Run
- 
+
 [godel2.l]
  
 [Show that a formal system of complexity N]
@@ -17,47 +17,47 @@ define (examine pairs lower-bound)
     if < lower-bound cadr car pairs
        car pairs
        (examine cdr pairs lower-bound)
- 
+
 define      examine
 value       (lambda (pairs lower-bound) (if (atom pairs) false
-             (if (< lower-bound (car (cdr (car pairs)))) (car
+             (if (< lower-bound (car (cdr (car pairs)))) (car 
             pairs) (examine (cdr pairs) lower-bound))))
- 
+
 (examine '((x 2)(y 3)) 0)
- 
+
 expression  (examine (' ((x 2) (y 3))) 0)
 value       (x 2)
- 
+
 (examine '((x 2)(y 3)) 1)
- 
+
 expression  (examine (' ((x 2) (y 3))) 1)
 value       (x 2)
- 
+
 (examine '((x 2)(y 3)) 2)
- 
+
 expression  (examine (' ((x 2) (y 3))) 2)
 value       (y 3)
- 
+
 (examine '((x 2)(y 3)) 3)
- 
+
 expression  (examine (' ((x 2) (y 3))) 3)
 value       false
- 
+
 (examine '((x 2)(y 3)) 4)
- 
+
 expression  (examine (' ((x 2) (y 3))) 4)
 value       false
- 
+
  
 [This is an identity function with the size-effect of]
 [displaying the number of bits in a binary string.]
 define (display-number-of-bits string)
     cadr cons display length string cons string nil
- 
+
 define      display-number-of-bits
-value       (lambda (string) (car (cdr (cons (display (length
+value       (lambda (string) (car (cdr (cons (display (length 
             string)) (cons string nil)))))
- 
+
  
 [This is the universal Turing machine U followed by its program.]
 cadr try no-time-limit 'eval read-exp
@@ -99,15 +99,15 @@ let (loop t fas)            [Run formal axiomatic system again.]
 bits ' display'(x 4881)
  
 ) [end of entire program for universal Turing machine U]
- 
+
 expression  (car (cdr (try no-time-limit (' (eval (read-exp)))
              (display-number-of-bits (append (display-number-o
-            f-bits (bits (' ((' (lambda (examine) ((' (lambda
+            f-bits (bits (' ((' (lambda (examine) ((' (lambda 
             (loop) (loop 0 nil))) (' (lambda (t fas) ((' (lamb
             da (v) ((' (lambda (s) (if s (car s) (if (= (car v
             ) success) failure (if (= (car (cdr v)) out-of-dat
             a) (loop t (append fas (cons (read-bit) nil))) (if
-             (= (car (cdr v)) out-of-time) (loop (+ t 1) fas)
+             (= (car (cdr v)) out-of-time) (loop (+ t 1) fas) 
             unexpected-condition)))))) (examine (car (cdr (cdr
              v))) (debug (+ (length fas) 4696)))))) (debug (tr
             y (debug t) (' (eval (read-exp))) (debug fas))))))
@@ -1464,7 +1464,7 @@ debug       (0 0 1 0 1 0 0 0 0 1 1 0 0 1 0 0 0 1 1 0 1 0 0 1 0
 debug       (success (x 4881) ((x 4881)))
 debug       4880
 value       x
- 
+
 End of LISP Run
- 
-Elapsed time is 1 seconds.
+
+Elapsed time is 0 seconds.

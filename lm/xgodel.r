@@ -1,5 +1,5 @@
 LISP Interpreter Run
- 
+
 [godel.l]
  
 [Show that a formal system of lisp complexity H_lisp (FAS) = N]
@@ -19,21 +19,21 @@ define (size-it-and-run-it exp)
     cadr cons display size display exp
          cons eval exp
               nil
- 
+
 define      size-it-and-run-it
 value       (lambda (exp) (car (cdr (cons (display (size (disp
             lay exp))) (cons (eval exp) nil)))))
- 
+
  
 (size-it-and-run-it'
 + 5 15
 )
- 
+
 expression  (size-it-and-run-it (' (+ 5 15)))
 display     (+ 5 15)
 display     8
 value       20
- 
+
  
 (size-it-and-run-it'
  
@@ -65,7 +65,7 @@ let (loop t)                          []
 (loop 0)                              [Start loop running with T = 0.]
                                       []
 ) [end size-it-and-run-it]
- 
+
 expression  (size-it-and-run-it (' ((' (lambda (examine) ((' (
             lambda (fas) ((' (lambda (n) ((' (lambda (loop) (l
             oop 0))) (' (lambda (t) ((' (lambda (v) ((' (lambd
@@ -91,7 +91,7 @@ display     447
 display     0
 display     (success elegant-expression (elegant-expression))
 value       elegant-expression
- 
+
 End of LISP Run
- 
+
 Elapsed time is 0 seconds.

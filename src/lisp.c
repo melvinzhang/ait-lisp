@@ -44,7 +44,8 @@ long wrd_car, wrd_cdr, wrd_cadr, wrd_caddr, wrd_eval, wrd_try;
 long wrd_no_time_limit, wrd_out_of_time, wrd_out_of_data, wrd_success, wrd_failure;
 long left_bracket, right_bracket, left_paren, right_paren, double_quote;
 long wrd_zero, wrd_one;
- 
+long wrd_read_exp, wrd_utm;
+
 long next = 0; /* next free node */
 long col = 0; /* column in each 50 character chunk of output
                  (preceeded by 12 char prefix) */
@@ -164,6 +165,7 @@ void initialize_atoms(void) /* initialize atoms */
  wrd_lambda = mk_atom(0,"lambda",3);
  wrd_cadr = mk_atom(0,"cadr",2);
  wrd_caddr = mk_atom(0,"caddr",2);
+ wrd_utm = mk_atom(0, "run-utm-on",2);
  wrd_quote = mk_atom(0,"'",2);
  wrd_if = mk_atom(0,"if",4);
  wrd_car = mk_atom(1,"car",2);
@@ -188,7 +190,7 @@ void initialize_atoms(void) /* initialize atoms */
  i = mk_atom(20,"size",2);
  i = mk_atom(21,"read-bit",1);
  i = mk_atom(22,"bits",2);
- i = mk_atom(23,"read-exp",1);
+ wrd_read_exp = mk_atom(23,"read-exp",1);
  wrd_eval = mk_atom(0,"eval",2);
  wrd_try = mk_atom(0,"try",4);
  left_bracket = mk_atom(0,"[",0);
@@ -434,6 +436,21 @@ long in(long mexp, long rparenokay) /* input m-exp */
                        nil)),
                   nil)),
              nil));
+   if (w == wrd_utm) {
+      long sexp = in(1,0);
+      sexp = cons(wrd_try,
+          cons(wrd_no_time_limit,
+          cons(cons(wrd_quote,
+             cons(cons(wrd_eval,
+                cons(cons(wrd_read_exp,nil),
+                   nil)),
+                nil)),
+          cons(sexp,
+             nil))));
+      sexp = cons(wrd_cdr,cons(sexp,nil));
+      sexp = cons(wrd_car,cons(sexp,nil));
+      return sexp;
+   }
    if (w == wrd_let) { /* expand let name def body  */
       name = in(1,0);
       def  = in(1,0);

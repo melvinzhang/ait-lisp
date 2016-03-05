@@ -34,3 +34,4 @@ download_ait:
 
 tests:
 	for i in unknowable/*.l; do make $${i%.l}.test; done
+	for i in lm/*.l; do make $${i%.l}.test; done

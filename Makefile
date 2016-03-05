@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 
 lisp: src/lisp.c
-	gcc -Werror -O -o$@ $^
+	gcc -Wall -Werror -O -o$@ $^
 
 LM = https://www.cs.auckland.ac.nz/~chaitin
 download_lm:

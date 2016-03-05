@@ -47,7 +47,7 @@ long left_bracket, right_bracket, left_paren, right_paren, double_quote;
 long wrd_zero, wrd_one;
 long wrd_read_exp, wrd_utm;
 
-long next = 0; /* next free node */
+long next_free = 0; /* next free node */
 long col = 0; /* column in each 50 character chunk of output
                  (preceeded by 12 char prefix) */
 time_t time1; /* clock at start of execution */
@@ -250,12 +250,12 @@ long cons(long x, long y) /* get free node & stuff x & y in it */
  /* if y is not a list, then cons is x */
  if ( y != nil && atom[y] ) return x;
  
- if (next >= SIZE) {
+ if (next_free >= SIZE) {
   printf("Storage overflow!\n");
   exit(0);
  }
  
- z = next++;
+ z = next_free++;
  car[z] = x;
  cdr[z] = y;
  atom[z] = 0;

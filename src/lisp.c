@@ -19,7 +19,8 @@
    The C Programming Language, Second Edition,
    Prentice-Hall, 1988.
 */
- 
+
+#include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
  

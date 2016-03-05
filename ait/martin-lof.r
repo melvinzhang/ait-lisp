@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    Show that a real r is Martin-Lof random
    iff it is Chaitin random.
@@ -34,6 +36,7 @@ define      A
 value       (lambda (m) (cdr (cons (display (base10-to-2 (- (^
              2 m) 1))) nil)))
 
+
 define (is-in? x l) [is x in the list l?]
    if atom l    false
    if = x car l true
@@ -42,6 +45,7 @@ define (is-in? x l) [is x in the list l?]
 define      is-in?
 value       (lambda (x l) (if (atom l) false (if (= x (car l))
              true (is-in? x (cdr l)))))
+
 
 define (convert-to-requirements cover n) [display requirements]
    if  atom cover requirements [finished?]
@@ -63,6 +67,7 @@ value       (lambda (cover n) (if (atom cover) requirements ((
              (display requirement) requirements))))) (cons s (
             cons (- (length s) n) nil))))) (cdr cover)))) (car
              cover))))
+
 
 define (stage k)
    if = k 4 stop! [[[stop infinite computation!!!]]]
@@ -86,11 +91,13 @@ value       (lambda (k) (if (= k 4) stop! ((' (lambda (loop) (
             cdr (try k expr nil))))))) (cons (cons ' (cons A n
             il)) (cons (* n n) nil))))) (+ 2 i))))))))
 
+
 [to remove duplicates]
 define requirements ()
 
 define      requirements
 value       ()
+
 
 [run it]
 (stage 0)
@@ -102,3 +109,7 @@ display     ((1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1) 12)
 display     ((1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 
             1) 20)
 value       stop!
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

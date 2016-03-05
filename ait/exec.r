@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    Given an expr to enumerate (program output) pairs,
    we simulate the Turing machine defined this way.
@@ -77,6 +79,7 @@ value       ((' (lambda (graph) ((' (lambda (p) ((' (lambda (l
              (if (= p (car (car pairs))) (car pairs) (look-for
              p (cdr pairs))))))))) nil))) (read-exp))
 
+
 [graph = (1 0) (01 1) (001 2) (0001 3) (00001 4) etc.]
 define graph 
     let (loop p n)
@@ -89,6 +92,7 @@ value       ((' (lambda (loop) (loop (' (1)) 0))) (' (lambda (
             p n) (cons (display (cons p (cons n nil))) (loop (
             cons 0 p) (+ 1 n))))))
 
+
 [test it!]
 
 try 10 graph nil
@@ -98,6 +102,7 @@ value       (failure out-of-time (((1) 0) ((0 1) 1) ((0 0 1) 2
             ) ((0 0 0 1) 3) ((0 0 0 0 1) 4) ((0 0 0 0 0 1) 5) 
             ((0 0 0 0 0 0 1) 6) ((0 0 0 0 0 0 0 1) 7) ((0 0 0 
             0 0 0 0 0 1) 8)))
+
 
 run-utm-on
 
@@ -134,3 +139,7 @@ debug       6
 debug       (((1) 0) ((0 1) 1) ((0 0 1) 2) ((0 0 0 1) 3) ((0 0
              0 0 1) 4))
 value       3
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

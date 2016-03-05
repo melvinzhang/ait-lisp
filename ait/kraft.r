@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    KRAFT INEQUALITY CRITERION FOR CONSTRUCTING COMPUTERS
    Take as input requirement pairs (output, size of program)
@@ -242,7 +244,7 @@ value       (lambda (requirements) ((' (lambda (free-space-poo
 
 [TEST KRAFT!]
 
-(kraft '((x 0) (y 1)))
+(kraft '((x 0) (y 1))) 
 
 expression  (kraft (' ((x 0) (y 1))))
 debug       (())
@@ -250,8 +252,7 @@ debug       ()
 debug       ()
 value       ((() x) not-enough-storage!)
 
- 
-(kraft '((a 1) (b 0) (c 1)))
+(kraft '((a 1) (b 0) (c 1))) 
 
 expression  (kraft (' ((a 1) (b 0) (c 1))))
 debug       (())
@@ -260,8 +261,7 @@ debug       ((1))
 debug       ()
 value       (((0) a) not-enough-storage! ((1) c))
 
- 
-(kraft '((x 1) (y 2)))
+(kraft '((x 1) (y 2))) 
 
 expression  (kraft (' ((x 1) (y 2))))
 debug       (())
@@ -269,8 +269,7 @@ debug       ((1))
 debug       ((1 1))
 value       (((0) x) ((1 0) y))
 
- 
-(kraft '((a 1) (b 2) (c 3) (d 4) (e 5)))
+(kraft '((a 1) (b 2) (c 3) (d 4) (e 5))) 
 
 expression  (kraft (' ((a 1) (b 2) (c 3) (d 4) (e 5))))
 debug       (())
@@ -282,8 +281,7 @@ debug       ((1 1 1 1 1))
 value       (((0) a) ((1 0) b) ((1 1 0) c) ((1 1 1 0) d) ((1 1
              1 1 0) e))
 
- 
-(kraft '((e 5) (d 4) (c 3) (b 2) (a 1)))
+(kraft '((e 5) (d 4) (c 3) (b 2) (a 1))) 
 
 expression  (kraft (' ((e 5) (d 4) (c 3) (b 2) (a 1))))
 debug       (())
@@ -295,8 +293,7 @@ debug       ((0 0 0 0 1))
 value       (((0 0 0 0 0) e) ((0 0 0 1) d) ((0 0 1) c) ((0 1) 
             b) ((1) a))
 
- 
-(kraft '((e 5) (c 3) (d 4) (a 1) (b 2)))
+(kraft '((e 5) (c 3) (d 4) (a 1) (b 2))) 
 
 expression  (kraft (' ((e 5) (c 3) (d 4) (a 1) (b 2))))
 debug       (())
@@ -307,3 +304,7 @@ debug       ((0 0 0 0 1) (0 1))
 debug       ((0 0 0 0 1))
 value       (((0 0 0 0 0) e) ((0 0 1) c) ((0 0 0 1) d) ((1) a)
              ((0 1) b))
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    Show that a real r is Solovay random
    iff it is Martin-Lof random.
@@ -85,14 +87,13 @@ define (A n) [displays infinite set 1^k 0, k > n]
          append base10-to-2 - ^ 2 k 1 [2^k - 1 = k 1's]
             cons 0 nil [followed by a 0 bit]
       (loop + k 1)
-  (loop + n 1)
+  (loop + n 1) 
 
 define      A
 value       (lambda (n) ((' (lambda (loop) (loop (+ n 1)))) ('
              (lambda (k) (cons (display (append (base10-to-2 (
             - (^ 2 k) 1)) (cons 0 nil))) (loop (+ k 1)))))))
 
- 
 
 [now put together in one list stage n of A_0 through A_n]
 define (sum n)
@@ -109,6 +110,7 @@ value       (lambda (n) ((' (lambda (loop) (loop 0 nil))) (' (
             nd (car (cdr (cdr (try n (cons (cons ' (cons A nil
             )) (cons k nil)) nil)))) sum)))))))
 
+
 [
  (count x y) 
  Now count how many times something x is contained in / 
@@ -124,6 +126,7 @@ value       (lambda (x y) (if (atom y) 0 (if (is-prefix-of? (c
             ar y) x) (+ 1 (count x (cdr y))) (count x (cdr y))
             )))
 
+
 define (is-prefix-of? x y) [is bit string x a prefix of bit string y?]
    if atom x  true
    if atom y  false
@@ -134,6 +137,7 @@ define      is-prefix-of?
 value       (lambda (x y) (if (atom x) true (if (atom y) false
              (if (= (car x) (car y)) (is-prefix-of? (cdr x) (c
             dr y)) false))))
+
 
 [get maximum length of a list of bit strings]
 define (max-length list) 
@@ -150,6 +154,7 @@ value       (lambda (list) (if (atom list) 0 ((' (lambda (len1
             ) (max-length (cdr list))))) (length (car list))))
             )
 
+
 [
  Now we get what (sum n) covers with multiplicity >= k.
  The measure of the multiplicity k covering will
@@ -165,6 +170,7 @@ define      exceeds-count
 value       (lambda (n k) ((' (lambda (sum-n) ((' (lambda (max
             -length-sum-n) (look-at nil))) (max-length sum-n))
             )) (sum n)))
+
 
 [
  This routine has free parameters sum-n, max-length-sum-n, k.
@@ -193,6 +199,7 @@ value       (lambda (x) (if (= (length x) max-length-sum-n) ((
             ))) (append x (cons 1 nil))))) (append x (cons 0 n
             il)))))
 
+
 [
  Now we put this all together into B_k, which is
  the limit as n goes to infinity of (exceeds-count n k),
@@ -215,6 +222,7 @@ define intervals ()
 define      intervals
 value       ()
 
+
 define (process-all x) [process list of intervals x]
    if atom x  intervals
    let intervals append (process car x) intervals
@@ -224,6 +232,7 @@ define      process-all
 value       (lambda (x) (if (atom x) intervals ((' (lambda (in
             tervals) (process-all (cdr x)))) (append (process 
             (car x)) intervals))))
+
 
 define (process interval) [process individual interval]
    if (new-interval-covered-by-previous-one? interval intervals) 
@@ -251,6 +260,7 @@ value       (lambda (interval) (if (new-interval-covered-by-pr
             max)))) (max-length holes))))) (new-interval-cover
             s-previous-ones interval intervals))))
 
+
 [returns true/false]
 define (new-interval-covered-by-previous-one? interval intervals)
    if atom intervals  false
@@ -262,6 +272,7 @@ value       (lambda (interval intervals) (if (atom intervals)
             false (if (is-prefix-of? (car intervals) interval)
              true (new-interval-covered-by-previous-one? inter
             val (cdr intervals)))))
+
 
 [returns set of previous intervals covered by this one]
 define (new-interval-covers-previous-ones interval intervals)
@@ -293,6 +304,7 @@ value       (lambda (bit-string len) (if (= len (length bit-st
             nd bit-string (cons 0 nil)) len) (extend (append b
             it-string (cons 1 nil)) len))))
 
+
 [extend all the bit strings in a given list to the same length]
 define (extend-all list len)
    if atom list   nil
@@ -303,6 +315,7 @@ define      extend-all
 value       (lambda (list len) (if (atom list) nil (append (ex
             tend (car list) len) (extend-all (cdr list) len)))
             )
+
 
 [subtract set of intervals y from set of intervals x]
 [output residue with display!]
@@ -317,6 +330,7 @@ value       (lambda (x y) (if (atom x) nil (if (is-in? (car x)
              y) (subtract (cdr x) y) (cons (display (car x)) (
             subtract (cdr x) y)))))
 
+
 define (is-in? x l) [is x an element of list l?]
    if atom l     false
    if = x car l  true
@@ -325,6 +339,7 @@ define (is-in? x l) [is x an element of list l?]
 define      is-in?
 value       (lambda (x l) (if (atom l) false (if (= x (car l))
              true (is-in? x (cdr l)))))
+
 
 [
  Put it all together---Here is cover B_k,
@@ -359,8 +374,9 @@ value       (lambda (k) ((' (lambda (intervals) ((' (lambda (s
             ) (stage (+ 1 n)))) (process-all exceed-count)))) 
             (exceeds-count n k)))))))) nil))
 
+
 [k = multiplicity = repeated/covered 2 or more times in the A_n]
-(B 2)
+(B 2) 
 
 expression  (B 2)
 display     (1 1 0)
@@ -370,3 +386,7 @@ display     (1 1 1 1 1 0)
 display     (1 1 1 1 1 1 0)
 display     (1 1 1 1 1 1 1 0)
 value       stop!
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

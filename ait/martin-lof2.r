@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    Show that a real r is Martin-Lof random
    iff it is Chaitin random.
@@ -23,6 +25,7 @@ define      is-in?
 value       (lambda (x l) (if (atom l) false (if (= x (car l))
              true (is-in? x (cdr l)))))
 
+
 define (is-prefix-of? x y) [is bit string x a prefix of bit string y?]
    if atom x  true
    if atom y  false
@@ -33,6 +36,7 @@ define      is-prefix-of?
 value       (lambda (x y) (if (atom x) true (if (atom y) false
              (if (= (car x) (car y)) (is-prefix-of? (cdr x) (c
             dr y)) false))))
+
 
 define (is-bit-string? x) [is x a list of 0's and 1's?]
    if = x nil   true
@@ -46,6 +50,7 @@ value       (lambda (x) (if (= x nil) true (if (atom x) false
             (if (= 0 (car x)) (is-bit-string? (cdr x)) (if (= 
             1 (car x)) (is-bit-string? (cdr x)) false)))))
 
+
 define C [test computer---real thing is eval read-exp]
    let (loop) [doubles all bits up to & including first 1]
      if = 1 read-bit '(1 1)
@@ -57,6 +62,7 @@ value       ((' (lambda (loop) (loop))) (' (lambda () (if (= 1
              (read-bit)) (' (1 1)) (cons 0 (cons 0 (loop))))))
             )
 
+
 [Now let's do stage n of A_k = strings s with H(s) <= |s| - k.] 
 [At stage n we look at programs p up to n bits in size for time up to n.]
 
@@ -65,6 +71,7 @@ define (compressible-by-k n k)
 
 define      compressible-by-k
 value       (lambda (n k) (look-at nil))
+
 
 [this routine has free parameters n, k, C]
 
@@ -90,12 +97,14 @@ value       (lambda (p) ((' (lambda (v) (if (= success (car v)
              (look-at (append p (cons 0 nil))) (look-at (appen
             d p (cons 1 nil)))))))) (try n C p)))
 
+
 [list of intervals in covering so far]
 [used to avoid overlapping intervals in covering]
 define intervals ()
 
 define      intervals
 value       ()
+
 
 define (process-all x) [process list of intervals x]
    if atom x  intervals
@@ -106,6 +115,7 @@ define      process-all
 value       (lambda (x) (if (atom x) intervals ((' (lambda (in
             tervals) (process-all (cdr x)))) (append (process 
             (car x)) intervals))))
+
 
 define (process interval) [process individual interval]
    if (new-interval-covered-by-previous-one? interval intervals) 
@@ -131,6 +141,7 @@ value       (lambda (interval) (if (new-interval-covered-by-pr
             max)))) (max-length holes))))) (new-interval-cover
             s-previous-ones interval intervals))))
 
+
 [returns true/false]
 define (new-interval-covered-by-previous-one? interval intervals)
    if atom intervals  false
@@ -142,6 +153,7 @@ value       (lambda (interval intervals) (if (atom intervals)
             false (if (is-prefix-of? (car intervals) interval)
              true (new-interval-covered-by-previous-one? inter
             val (cdr intervals)))))
+
 
 [returns set of previous intervals covered by this one]
 define (new-interval-covers-previous-ones interval intervals)
@@ -173,6 +185,7 @@ value       (lambda (list) (if (atom list) 0 ((' (lambda (len1
             ) (max-length (cdr list))))) (length (car list))))
             )
 
+
 [produce set of all extensions of a given bit string to a given length]
 [(assumed >= to its current length)]
 define (extend bit-string len)
@@ -188,6 +201,7 @@ value       (lambda (bit-string len) (if (= len (length bit-st
             nd bit-string (cons 0 nil)) len) (extend (append b
             it-string (cons 1 nil)) len))))
 
+
 [extend all the bit strings in a given list to the same length]
 define (extend-all list len)
    if atom list   nil
@@ -198,6 +212,7 @@ define      extend-all
 value       (lambda (list len) (if (atom list) nil (append (ex
             tend (car list) len) (extend-all (cdr list) len)))
             )
+
 
 [subtract set of intervals y from set of intervals x]
 define (subtract x y)
@@ -210,6 +225,7 @@ define      subtract
 value       (lambda (x y) (if (atom x) nil (if (is-in? (car x)
              y) (subtract (cdr x) y) (cons (debug (display (ca
             r x))) (subtract (cdr x) y)))))
+
 
 [
  Put it all together---Here is cover A_k
@@ -240,8 +256,9 @@ value       (lambda (k) ((' (lambda (intervals) ((' (lambda (s
             sible-strings)))) (compressible-by-k n k))))))) ni
             l))
 
+
 [k = compression amount = 8 bits]
-(A 8)
+(A 8) 
 
 expression  (A 8)
 display     (0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
@@ -249,3 +266,7 @@ display     (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
 display     (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
 display     (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
 value       stop!
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

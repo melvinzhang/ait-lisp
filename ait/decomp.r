@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    FUNDAMENTAL DECOMPOSITION
    We prove here that 
@@ -128,6 +130,7 @@ value       (lambda (x*) ((' (lambda (c) ((' (lambda (x) ((' (
             ))))) (debug (car (cdr (try no-time-limit (' (eval
              (read-exp))) (debug x*)))))))) (debug 100)))
 
+
 define x* 3
 
 define      x*
@@ -137,6 +140,7 @@ length bits x*
 
 expression  (length (bits x*))
 value       16
+
 
 [give all-together x*]
 try 60 cons cons "'
@@ -178,6 +182,7 @@ debug       9
 value       (failure out-of-time ((3 88) (6 89) (9 90) (12 91)
              (15 92)))
 
+
 define x* 4
 
 define      x*
@@ -187,6 +192,7 @@ length bits x*
 
 expression  (length (bits x*))
 value       16
+
 
 [give all-together x*]
 try 60 cons cons "'
@@ -226,3 +232,7 @@ debug       ((0 0 0 1 0 0 0 1) (0 0 0 1 0 0 1) (0 0 0 1 0 1) (
 debug       9
 value       (failure out-of-time ((4 89) (8 90) (12 91) (16 92
             )))
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

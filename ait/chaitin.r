@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    Show that a real r is Solovay random
    iff it is strong Chaitin random.
@@ -34,6 +36,7 @@ define      A
 value       (lambda (m) (cdr (cons (display (base10-to-2 (- (^
              2 m) 1))) nil)))
 
+
 [in the proof we pick N so that] 
 [the total measure Sum_{m >= N} of mu A_m <= 1]
 [for example,]
@@ -41,6 +44,7 @@ define N 5
 
 define      N
 value       5
+
 
 define (is-in? x l) [is x in the list l?]
    if atom l    false
@@ -50,6 +54,7 @@ define (is-in? x l) [is x in the list l?]
 define      is-in?
 value       (lambda (x l) (if (atom l) false (if (= x (car l))
              true (is-in? x (cdr l)))))
+
 
 define (convert-to-requirements cover) [display requirements]
    if atom cover requirements [finished?]
@@ -70,6 +75,7 @@ value       (lambda (cover) (if (atom cover) requirements (('
             nts) (convert-to-requirements cover))) (cons (disp
             lay requirement) requirements))))) (cons s (cons (
             length s) nil))))) (cdr cover)))) (car cover))))
+
 
 define (stage k)
    if = k 5 stop! [[[stop infinite computation!!!]]]
@@ -92,11 +98,13 @@ value       (lambda (k) (if (= k 5) stop! ((' (lambda (loop) (
             l))))))) (cons (cons ' (cons A nil)) (cons (+ N i)
              nil)))))))))
 
+
 [to remove duplicates]
 define requirements ()
 
 define      requirements
 value       ()
+
 
 [run it]
 (stage 0)
@@ -108,3 +116,7 @@ display     ((1 1 1 1 1 1 1) 7)
 display     ((1 1 1 1 1 1 1 1) 8)
 display     ((1 1 1 1 1 1 1 1 1) 9)
 value       stop!
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    Lemma for 
       H(y|x) <= H(x,y) - H(x) + c
@@ -41,6 +43,7 @@ value       ((' (lambda (is-pair?) ((' (lambda (v) (if (is-pai
              (x) (if (atom x) false (if (atom (cdr x)) false (
             if (atom (cdr (cdr x))) true false))))))
 
+
 [Test it!]
 
 run-utm-on bits' xyz
@@ -67,6 +70,7 @@ expression  (car (cdr (try no-time-limit (' (eval (read-exp)))
              (bits (' (cons a (cons b (cons c nil))))))))
 value       (a b c)
 
+
 cadr try 99 U-prime bits' xyz
 
 expression  (car (cdr (try 99 U-prime (bits (' xyz)))))
@@ -89,3 +93,7 @@ cadr try 99 U-prime bits' cons a cons b cons c nil
 expression  (car (cdr (try 99 U-prime (bits (' (cons a (cons b
              (cons c nil))))))))
 value       out-of-time
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

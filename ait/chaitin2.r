@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    Show that a real r is Solovay random
    iff it is strong Chaitin random.
@@ -23,6 +25,7 @@ define      is-in?
 value       (lambda (x l) (if (atom l) false (if (= x (car l))
              true (is-in? x (cdr l)))))
 
+
 define (union x y) [set-theoretic union of two sets x y]
    if atom x y
    if (is-in? car x y) (union cdr x y)
@@ -32,6 +35,7 @@ define      union
 value       (lambda (x y) (if (atom x) y (if (is-in? (car x) y
             ) (union (cdr x) y) (cons (car x) (union (cdr x) y
             )))))
+
 
 define (is-bit-string? x) [is x a list of 0's and 1's?]
    if = x nil   true
@@ -45,6 +49,7 @@ value       (lambda (x) (if (= x nil) true (if (atom x) false
             (if (= 0 (car x)) (is-bit-string? (cdr x)) (if (= 
             1 (car x)) (is-bit-string? (cdr x)) false)))))
 
+
 define C [test computer---real thing is eval read-exp]
    let (loop x y) [xx yy zz 01 ===> xyz]
      if = x y cons x (loop read-bit read-bit)
@@ -55,6 +60,7 @@ define      C
 value       ((' (lambda (loop) (loop (read-bit) (read-bit)))) 
             (' (lambda (x y) (if (= x y) (cons x (loop (read-b
             it) (read-bit))) nil))))
+
 
 [
  The hypothesis that
@@ -71,6 +77,7 @@ define K 5
 
 define      K
 value       5
+
 
 [
  Our proof depends on the fact that there is a c such that
@@ -89,6 +96,7 @@ define (quasi-compressible N n)
 
 define      quasi-compressible
 value       (lambda (N n) (look-at nil))
+
 
 [this routine has free parameters N, n, K, C]
 
@@ -118,6 +126,7 @@ value       (lambda (p) (if (= (length p) (+ n K)) nil ((' (la
             append p (cons 0 nil))) (look-at (append p (cons 1
              nil))))))) (try N C p))))
 
+
 [
  List of intervals in covering so far.
  used to avoid overlapping intervals in covering.
@@ -130,6 +139,7 @@ define intervals ()
 define      intervals
 value       ()
 
+
 define (process-all x) [process list of intervals x]
    if atom x  intervals
    let intervals append (process car x) intervals
@@ -139,6 +149,7 @@ define      process-all
 value       (lambda (x) (if (atom x) intervals ((' (lambda (in
             tervals) (process-all (cdr x)))) (append (process 
             (car x)) intervals))))
+
 
 define (process interval) [process individual interval]
    if (is-in? interval intervals) 
@@ -150,6 +161,7 @@ define (process interval) [process individual interval]
 define      process
 value       (lambda (interval) (if (is-in? interval intervals)
              nil (cons (display interval) nil)))
+
 
 [
  Put it all together---Here is cover A_n
@@ -182,8 +194,9 @@ value       (lambda (n) ((' (lambda (intervals) ((' (lambda (s
             si-compressible-strings)))) (quasi-compressible N 
             n)))))))) nil))
 
+
 [n = 2, i.e., quasi-compressible 2-bit strings]
-(A 2)
+(A 2) 
 
 expression  (A 2)
 display     (0 0)
@@ -191,3 +204,7 @@ display     (0 1)
 display     (1 0)
 display     (1 1)
 value       stop!
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

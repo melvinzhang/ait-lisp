@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[[[
    Occam's razor---Concentration process.  
    From computer C construct C' such that 
@@ -154,6 +156,7 @@ value       ((' (lambda (previous-requirements) ((' (lambda (C
             gnore-it) (if (= 1 (read-bit)) n (loop (* 10 n))))
             ) (read-bit))))))))) nil)
 
+
 try 60 all-together nil
 
 expression  (try 60 all-together nil)
@@ -179,3 +182,7 @@ debug       (1000 4)
 debug       8
 debug       ((10 128) (100 64) (1000 32))
 value       (failure out-of-time ((10 2) (100 3) (1000 4)))
+
+End of LISP Run
+
+Elapsed time is 0 seconds.

@@ -1,7 +1,10 @@
 SHELL = /bin/bash
 
 lisp: src/lisp.c
-	gcc -Wall -Werror -O -o$@ $^
+	gcc -pedantic \
+	-Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual \
+	-Wstrict-prototypes -Wmissing-prototypes -Werror \
+	-O -o$@ $^
 
 LM = https://www.cs.auckland.ac.nz/~chaitin
 download_lm:

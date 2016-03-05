@@ -147,7 +147,6 @@ while (1) {
  
 void initialize_atoms(void) /* initialize atoms */
 {
- long i;
  if ( nil != mk_atom(0,"()",0) ) {
     printf("nil != 0\n");
     exit(0); /* terminate execution */
@@ -171,26 +170,26 @@ void initialize_atoms(void) /* initialize atoms */
  wrd_if = mk_atom(0,"if",4);
  wrd_car = mk_atom(1,"car",2);
  wrd_cdr = mk_atom(2,"cdr",2);
- i = mk_atom(3,"cons",3);
- i = mk_atom(4,"atom",2);
- i = mk_atom(5,"=",3);
- i = mk_atom(6,"display",2);
- i = mk_atom(7,"debug",2);
- i = mk_atom(8,"append",3);
- i = mk_atom(9,"length",2);
- i = mk_atom(10,"<",3);
- i = mk_atom(11,">",3);
- i = mk_atom(12,"<=",3);
- i = mk_atom(13,">=",3);
- i = mk_atom(14,"+",3);
- i = mk_atom(15,"*",3);
- i = mk_atom(16,"^",3);
- i = mk_atom(17,"-",3);
- i = mk_atom(18,"base2-to-10",2);
- i = mk_atom(19,"base10-to-2",2);
- i = mk_atom(20,"size",2);
- i = mk_atom(21,"read-bit",1);
- i = mk_atom(22,"bits",2);
+ mk_atom(3,"cons",3);
+ mk_atom(4,"atom",2);
+ mk_atom(5,"=",3);
+ mk_atom(6,"display",2);
+ mk_atom(7,"debug",2);
+ mk_atom(8,"append",3);
+ mk_atom(9,"length",2);
+ mk_atom(10,"<",3);
+ mk_atom(11,">",3);
+ mk_atom(12,"<=",3);
+ mk_atom(13,">=",3);
+ mk_atom(14,"+",3);
+ mk_atom(15,"*",3);
+ mk_atom(16,"^",3);
+ mk_atom(17,"-",3);
+ mk_atom(18,"base2-to-10",2);
+ mk_atom(19,"base10-to-2",2);
+ mk_atom(20,"size",2);
+ mk_atom(21,"read-bit",1);
+ mk_atom(22,"bits",2);
  wrd_read_exp = mk_atom(23,"read-exp",1);
  wrd_eval = mk_atom(0,"eval",2);
  wrd_try = mk_atom(0,"try",4);

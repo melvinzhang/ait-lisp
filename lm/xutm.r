@@ -249,4 +249,5 @@ value       (0 0 0 0 0 0 0 1)
 
 End of LISP Run
 
-Elapsed time is 0 seconds.
+Calls to eval = 974
+Calls to cons = 31078

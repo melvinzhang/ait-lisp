@@ -94,4 +94,5 @@ value       elegant-expression
 
 End of LISP Run
 
-Elapsed time is 0 seconds.
+Calls to eval = 134
+Calls to cons = 6480

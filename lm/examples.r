@@ -871,4 +871,5 @@ value       (success a ())
 
 End of LISP Run
 
-Elapsed time is 1 seconds.
+Calls to eval = 4408
+Calls to cons = 100799

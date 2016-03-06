@@ -50,6 +50,7 @@ long wrd_read_exp, wrd_utm;
 long next_free = 0; /* next free node */
 long col = 0; /* column in each 50 character chunk of output
                  (preceeded by 12 char prefix) */
+long time_eval = 0; /* number of calls to eval */
 time_t time1; /* clock at start of execution */
 time_t time2; /* clock at end of execution */
 long turing_machine_tapes; /* stack of binary data for try's */
@@ -336,8 +337,10 @@ long in_word2(void) { /* read word */
          if (character == EOF) {
             time2 = time(NULL);
             printf(
-            "End of LISP Run\n\nElapsed time is %.0f seconds.\n",
-            difftime(time2,time1)
+            "End of LISP Run\n\nCalls to eval = %ld\nCalls to cons = %ld\n",
+            time_eval,
+            next_free
+         // difftime(time2,time1)
          /* on some systems, above line should instead be: */
          /* time2 - time1 */
             );
@@ -508,6 +511,8 @@ long eval(long e, long d) /* evaluate expression */
  d is permitted depth - decimal integer, or wrd_no_time_limit
 */
  long f, v, args, x, y, z, vars, body, var;
+
+ time_eval++;
  
  if (numb[e]) return e;
  /* find current binding of atomic expression */

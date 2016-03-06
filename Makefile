@@ -36,7 +36,10 @@ download_ait:
 	done
 
 %.test: lisp
-	diff <(./lisp < $*.l | grep -v Elapsed) <(grep -v Elapsed $*.r)
+	diff $*.r <(./lisp < $*.l)
 
 tests:
 	for i in `grep -L was-read lm/*.l unknowable/*.l ait/*.l`; do make -s $${i%.l}.test; done
+
+runs:
+	for i in `grep -L was-read lm/*.l unknowable/*.l ait/*.l`; do ./lisp < $$i > $${i%.l}.r; done

@@ -685,4 +685,5 @@ value       (failure out-of-data () failure out-of-data () fai
 
 End of LISP Run
 
-Elapsed time is 0 seconds.
+Calls to eval = 41477
+Calls to cons = 239551

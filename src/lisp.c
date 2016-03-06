@@ -60,13 +60,13 @@ long buffer2; /* buffer for converting lists of bits into s-expressions */
               /* contains list of all the words in an input record */
  
 void initialize_atoms(void); /* initialize atoms */
-long mk_atom(long number, char *name, long args); /* make an atom */
+long mk_atom(long number, char const *name, long args); /* make an atom */
 long mk_numb(long value); /* make an number */
-long mk_string(char *p); /* make list of characters */
+long mk_string(char const *p); /* make list of characters */
 long eq_wrd(long x, long y); /* are two lists of characters equal ? */
 long lookup_word(long x); /* look up word in object list ? */
 long cons(long x, long y); /* get free node & stuff x & y in it */
-long out(char *x, long y); /* output expression */
+long out(char const *x, long y); /* output expression */
 void out_lst(long x); /* output list */
 void out_atm(long x); /* output atom */
 void out_chr(long x); /* output character */
@@ -202,7 +202,7 @@ void initialize_atoms(void) /* initialize atoms */
  wrd_one = mk_numb(cons('1',nil));
 }
  
-long mk_atom(long number, char *name, long args) /* make an atom */
+long mk_atom(long number, char const *name, long args) /* make an atom */
 {
  long a;
  a = cons(nil,nil); /* get an empty node */
@@ -235,7 +235,7 @@ long mk_numb(long value) /* make an number */
  return a;
 }
  
-long mk_string(char *p) /* make list of characters */
+long mk_string(char const *p) /* make list of characters */
 {             /* in reverse order */
  long v = nil;
  while (*p != '\0')
@@ -268,7 +268,7 @@ long cons(long x, long y) /* get free node & stuff x & y in it */
  return z;
 }
  
-long out(char *x, long y) /* output expression */
+long out(char const *x, long y) /* output expression */
 {
    printf("%-12s",x);
    col = 0; /* so can insert \n and 12 blanks

@@ -39,4 +39,4 @@ download_ait:
 	diff <(./lisp < $*.l | grep -v Elapsed) <(grep -v Elapsed $*.r)
 
 tests:
-	for i in `grep -L was-read lm/*.l unknowable/*.l ait/*.l`; do make $${i%.l}.test; done
+	for i in `grep -L was-read lm/*.l unknowable/*.l ait/*.l`; do make -s $${i%.l}.test; done

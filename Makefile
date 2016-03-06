@@ -6,6 +6,9 @@ lisp: src/lisp.c
 	-Wstrict-prototypes -Wmissing-prototypes -Werror \
 	-O -o$@ $^
 
+clean:
+	-rm lisp
+
 LM = https://www.cs.auckland.ac.nz/~chaitin
 download_lm:
 	wget ${LM}/lisp.c -P src

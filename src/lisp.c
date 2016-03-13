@@ -517,6 +517,9 @@ long eval(long e, long d) /* evaluate expression */
  if (numb[e]) return e;
  /* find current binding of atomic expression */
  if (atom[e]) return car[vlst[e]];
+
+ /* lambda expression evaluates to itself */
+ if (car[e] == wrd_lambda) return e;
  
  f = eval(car[e],d); /* evaluate function */
  e = cdr[e]; /* remove function from list of arguments */

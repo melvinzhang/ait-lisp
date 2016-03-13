@@ -614,25 +614,30 @@ long eval(long e, long d) /* evaluate expression */
     if (v < 0) return cons(wrd_failure,cons(-v,cons(stub,nil)));
     return cons(wrd_success,cons(v,cons(stub,nil)));
  }
- 
- f = cdr[f];
- vars = car[f];
- f = cdr[f];
- body = car[f];
- 
- bind(vars,args);
- 
- v = eval(body,d);
- 
- /* unbind */
- while (!atom[vars]) {
-    var = car[vars];
-    if (atom[var])
-       vlst[var] = cdr[vlst[var]];
-    vars = cdr[vars];
+
+ // f is a lambda expression
+ if (car[f] == wrd_lambda) {
+     f = cdr[f];
+     vars = car[f];
+     f = cdr[f];
+     body = car[f];
+     
+     bind(vars,args);
+     
+     v = eval(body,d);
+     
+     /* unbind */
+     while (!atom[vars]) {
+        var = car[vars];
+        if (atom[var])
+           vlst[var] = cdr[vlst[var]];
+        vars = cdr[vars];
+     }
+     return v;
  }
- 
- return v;
+
+ // everything else is a function that returns itself
+ return f;
 }
  
 void clean_env(void) /* clean environment */

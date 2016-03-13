@@ -39,7 +39,7 @@ download_ait:
 	diff $*.r <(./lisp < $*.l)
 
 tests:
-	for i in `grep -L was-read lm/*.l unknowable/*.l ait/*.l`; do make -s $${i%.l}.test; done
+	for i in lm/*.l unknowable/*.l ait/*.l; do make -s $${i%.l}.test; done
 
 runs:
-	for i in `grep -L was-read lm/*.l unknowable/*.l ait/*.l`; do ./lisp < $$i > $${i%.l}.r; done
+	for i in lm/*.l unknowable/*.l ait/*.l; do ./lisp < $$i > $${i%.l}.r; done

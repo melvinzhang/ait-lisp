@@ -163,23 +163,16 @@ append
    This technique for getting a program as well as its output
    by inching along using try is slow.
 
-   Now let's speed up gamma by adding a new primitive function.
-   Was-read gives the binary data read so far in the current try. 
-   With it we will prove that H(x,y) <= H(x) + H(y|x) + 2104.
+   Now let's speed up gamma by using bits to get the binary
+   representation of x*.
+   With it we will prove that H(x,y) <= H(x) + H(y|x) + 1176.
 ]
-define delta                 [knows that its own size is 2104 bits]
-   let (skip n s)            [skip first n bits of bit string s]
-       if = n 0 s (skip - n 1 cdr s) [used to erase delta from was-read]
-   let x eval read-exp               [get x]
-   let x* (skip 2104 was-read)       [get program for x]
-   let y                     [calculate y from the program for x by]
-       eval cons 'read-exp   [running ((read-exp) (' x*))]
-            cons cons "' 
-                 cons x*
-                 nil 
-            nil 
-   [form the pair x, y]
-   cons x cons y nil         
+define delta
+   let x* read-exp           [get sexp of x*]
+   let y* read-exp           [get sexp of y*]
+   let x  eval x*            [calculate x from x*]
+   let y  (y* bits x*)       [calculate y from y* and bits of x*]
+   cons x cons y nil
 [Size it.]
 length bits delta
 [Use it.]

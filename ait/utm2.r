@@ -1,3 +1,5 @@
+LISP Interpreter Run
+
 [[[
  RELATIVE COMPLEXITY!
  Additional steps in my new construction for
@@ -129,12 +131,11 @@ value       ((1 1 1 1 1) (0 0 0 0 0 0 0 0 0))
    Proof that H(H(x)|x) <= 208.
 ]
 define (alpha x*)     [x* = minimum-size program for x]
-   length x* 
+   length x*          [get H(x) from x*]
 
 define      alpha
 value       (lambda (x*) (length x*))
 
-         [get H(x) from x*]
 [Size it.]
 length bits alpha
 
@@ -254,38 +255,27 @@ value       (2 3)
    This technique for getting a program as well as its output
    by inching along using try is slow.
 
-   Now let's speed up gamma by adding a new primitive function.
-   Was-read gives the binary data read so far in the current try. 
-   With it we will prove that H(x,y) <= H(x) + H(y|x) + 2104.
+   Now let's speed up gamma by using bits to get the binary
+   representation of x*.
+   With it we will prove that H(x,y) <= H(x) + H(y|x) + 1176.
 ]
-define delta                 [knows that its own size is 2104 bits]
-   let (skip n s)            [skip first n bits of bit string s]
-       if = n 0 s (skip - n 1 cdr s) [used to erase delta from was-read]
-   let x eval read-exp               [get x]
-   let x* (skip 2104 was-read)       [get program for x]
-   let y                     [calculate y from the program for x by]
-       eval cons 'read-exp   [running ((read-exp) (' x*))]
-            cons cons "' 
-                 cons x*
-                 nil 
-            nil 
-   [form the pair x, y]
-   cons x cons y nil 
+define delta
+   let x* read-exp           [get sexp of x*]
+   let y* read-exp           [get sexp of y*]
+   let x  eval x*            [calculate x from x*]
+   let y  (y* bits x*)       [calculate y from y* and bits of x*]
+   cons x cons y nil
 
 define      delta
-value       ((' (lambda (skip) ((' (lambda (x) ((' (lambda (x*
-            ) ((' (lambda (y) (cons x (cons y nil)))) (eval (c
-            ons (' (read-exp)) (cons (cons ' (cons x* nil)) ni
-            l)))))) (skip 2104 (was-read))))) (eval (read-exp)
-            )))) (' (lambda (n s) (if (= n 0) s (skip (- n 1) 
-            (cdr s))))))
+value       ((' (lambda (x*) ((' (lambda (y*) ((' (lambda (x) 
+            ((' (lambda (y) (cons x (cons y nil)))) (y* (bits 
+            x*))))) (eval x*)))) (read-exp)))) (read-exp))
 
-        
 [Size it.]
 length bits delta
 
 expression  (length (bits delta))
-value       2104
+value       1176
 
 [Use it.]
 
@@ -315,3 +305,8 @@ expression  (car (cdr (try no-time-limit (' (eval (read-exp)))
             bits (' (lambda (x*) (+ 1 (car (cdr (try no-time-l
             imit (' (eval (read-exp))) x*))))))))))))
 value       (2 3)
+
+End of LISP Run
+
+Calls to eval = 2587
+Calls to cons = 62848

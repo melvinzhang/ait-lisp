@@ -26,6 +26,30 @@
 #define SIZE 1000000 /* numbers of nodes of tree storage */
 #define nil 0        /* end of list marker */
 
+#define PFCAR 1
+#define PFCDR 2
+#define PFCONS 3
+#define PFATOM 4
+#define PFEQ 5
+#define PFDISPLAY 6
+#define PFDEBUG 7
+#define PFAPPEND 8
+#define PFLENGTH 9
+#define PFLT 10
+#define PFGT 11
+#define PFLEQ 12
+#define PFGEQ 13
+#define PFPLUS 14
+#define PFTIMES 15
+#define PFPOW 16
+#define PFMINUS 17
+#define PF2TO10 18
+#define PF10TO2 19
+#define PFSIZE 20
+#define PFREADBIT 21
+#define PFBITS 22
+#define PFREADEXP 23
+
 long car[SIZE], cdr[SIZE]; /* tree storage */
 short atom[SIZE];          /* is it an atom? */
 short numb[SIZE];          /* is it a number? */
@@ -172,29 +196,29 @@ void initialize_atoms(void) /* initialize atoms */
   wrd_utm = mk_atom(0, "run-utm-on", 2);
   wrd_quote = mk_atom(0, "'", 2);
   wrd_if = mk_atom(0, "if", 4);
-  wrd_car = mk_atom(1, "car", 2);
-  wrd_cdr = mk_atom(2, "cdr", 2);
-  mk_atom(3, "cons", 3);
-  mk_atom(4, "atom", 2);
-  mk_atom(5, "=", 3);
-  mk_atom(6, "display", 2);
-  mk_atom(7, "debug", 2);
-  mk_atom(8, "append", 3);
-  mk_atom(9, "length", 2);
-  mk_atom(10, "<", 3);
-  mk_atom(11, ">", 3);
-  mk_atom(12, "<=", 3);
-  mk_atom(13, ">=", 3);
-  mk_atom(14, "+", 3);
-  mk_atom(15, "*", 3);
-  mk_atom(16, "^", 3);
-  mk_atom(17, "-", 3);
-  mk_atom(18, "base2-to-10", 2);
-  mk_atom(19, "base10-to-2", 2);
-  mk_atom(20, "size", 2);
-  mk_atom(21, "read-bit", 1);
-  mk_atom(22, "bits", 2);
-  wrd_read_exp = mk_atom(23, "read-exp", 1);
+  wrd_car = mk_atom(PFCAR, "car", 2);
+  wrd_cdr = mk_atom(PFCDR, "cdr", 2);
+  mk_atom(PFCONS, "cons", 3);
+  mk_atom(PFATOM, "atom", 2);
+  mk_atom(PFEQ, "=", 3);
+  mk_atom(PFDISPLAY, "display", 2);
+  mk_atom(PFDEBUG, "debug", 2);
+  mk_atom(PFAPPEND, "append", 3);
+  mk_atom(PFLENGTH, "length", 2);
+  mk_atom(PFLT, "<", 3);
+  mk_atom(PFGT, ">", 3);
+  mk_atom(PFLEQ, "<=", 3);
+  mk_atom(PFGEQ, ">=", 3);
+  mk_atom(PFPLUS, "+", 3);
+  mk_atom(PFTIMES, "*", 3);
+  mk_atom(PFPOW, "^", 3);
+  mk_atom(PFMINUS, "-", 3);
+  mk_atom(PF2TO10, "base2-to-10", 2);
+  mk_atom(PF10TO2, "base10-to-2", 2);
+  mk_atom(PFSIZE, "size", 2);
+  mk_atom(PFREADBIT, "read-bit", 1);
+  mk_atom(PFBITS, "bits", 2);
+  wrd_read_exp = mk_atom(PFREADEXP, "read-exp", 1);
   wrd_eval = mk_atom(0, "eval", 2);
   wrd_try = mk_atom(0, "try", 4);
   left_bracket = mk_atom(0, "[", 0);
@@ -530,17 +554,17 @@ long eval(long e, long d) /* evaluate expression */
   z = car[cdr[cdr[args]]]; /* pick up third argument */
 
   switch (pf_numb[f]) {
-    case 1:
+    case PFCAR:
       return car[x];
-    case 2:
+    case PFCDR:
       return cdr[x];
-    case 3:
+    case PFCONS:
       return cons(x, y);
-    case 4:
+    case PFATOM:
       return (atom[x] ? wrd_true : wrd_false);
-    case 5:
+    case PFEQ:
       return (eq(x, y) ? wrd_true : wrd_false);
-    case 6:
+    case PFDISPLAY:
       if (car[display_enabled])
         return out("display", x);
       else {
@@ -552,49 +576,49 @@ long eval(long e, long d) /* evaluate expression */
         car[stub] = new_end;
         return x;
       }
-    case 7:
+    case PFDEBUG:
       return out("debug", x);
-    case 8:
+    case PFAPPEND:
       return append((atom[x] ? nil : x), (atom[y] ? nil : y));
-    case 9:
+    case PFLENGTH:
       return mk_numb(length(x));
-    case 10:
+    case PFLT:
       return (compare(nmb(x), nmb(y)) == '<' ? wrd_true : wrd_false);
-    case 11:
+    case PFGT:
       return (compare(nmb(x), nmb(y)) == '>' ? wrd_true : wrd_false);
-    case 12:
+    case PFLEQ:
       return (compare(nmb(x), nmb(y)) != '>' ? wrd_true : wrd_false); /* <= */
-    case 13:
+    case PFGEQ:
       return (compare(nmb(x), nmb(y)) != '<' ? wrd_true : wrd_false); /* >= */
-    case 14:
+    case PFPLUS:
       return mk_numb(addition(nmb(x), nmb(y), 0)); /* no carry in initially */
-    case 15:
+    case PFTIMES:
       return mk_numb(multiplication(nmb(x), nmb(y)));
-    case 16:
+    case PFPOW:
       return mk_numb(exponentiation(nmb(x), nmb(y)));
-    case 17:
+    case PFMINUS:
       if (compare(nmb(x), nmb(y)) != '>')
         return mk_numb(nil); /* y too big to subtract from x */
       else
         return mk_numb(remove_leading_zeros(subtraction(nmb(x), nmb(y), 0)));
     /* no borrow in initially */
-    case 18:
+    case PF2TO10:
       return mk_numb(base2_to_10(x)); /* convert bit string to decimal number */
-    case 19:
+    case PF10TO2:
       return base10_to_2(nmb(x)); /* convert decimal number to bit string */
-    case 20:
+    case PFSIZE:
       return mk_numb(size(x)); /* size of print representation of x */
-    case 21:
+    case PFREADBIT:
       return read_bit(); /* read one square of Turing machine tape */
                          /* convert s-exp to list of bits */
-    case 22: {
+    case PFBITS: {
       v = q = cons(nil, nil);
       write_lst(x);
       write_chr('\n');
       return cdr[v];
     }
     /* read lisp s-expression from Turing machine tape, 8 bits per char */
-    case 23: {
+    case PFREADEXP: {
       v = read_record();
       if (v < 0) return v;
       return read_expr(0);

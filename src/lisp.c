@@ -348,9 +348,12 @@ long in_word2(void) {       /* read word */
     do {                                 /* read characters until '\n' */
       character = getchar();
       if (character == EOF) {
-        printf("End of LISP Run\n\nCalls to eval = %ld\nCalls to cons = %ld\n",
-               time_eval, next_free
-               );
+        printf(
+          "End of LISP Run\n\n"
+          "Calls to eval = %ld\n"
+          "Calls to cons = %ld\n",
+          time_eval, next_free
+        );
         exit(0); /* terminate execution */
       }          /* end of if (character == EOF) */
       putchar(character);

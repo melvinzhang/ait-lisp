@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 
 lisp: src/lisp.c
-	gcc -pedantic \
+	${CC} -pedantic \
 	-Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual \
 	-Wstrict-prototypes -Wmissing-prototypes -Werror \
 	-O -o$@ $^

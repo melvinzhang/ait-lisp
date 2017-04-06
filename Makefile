@@ -38,8 +38,8 @@ download_ait:
 %.test: lisp
 	diff $*.r <(./lisp < $*.l)
 
-tests:
-	for i in lm/*.l unknowable/*.l ait/*.l; do make -s $${i%.l}.test; done
+tests: $(wildcard */*.l)
+	for i in $^; do make -s $${i%.l}.test; done
 
-runs:
-	for i in lm/*.l unknowable/*.l ait/*.l; do ./lisp < $$i > $${i%.l}.r; done
+runs: $(wildcard */*.l)
+	for i in $^; do ./lisp < $$i > $${i%.l}.r; done

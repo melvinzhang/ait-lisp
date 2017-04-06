@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 #define SIZE 1000000 /* numbers of nodes of tree storage */
 #define nil 0        /* end of list marker */
@@ -54,8 +53,6 @@ long next_free = 0;        /* next free node */
 long col = 0;              /* column in each 50 character chunk of output
                               (preceeded by 12 char prefix) */
 long time_eval = 0;        /* number of calls to eval */
-time_t time1;              /* clock at start of execution */
-time_t time2;              /* clock at end of execution */
 long turing_machine_tapes; /* stack of binary data for try's */
 long display_enabled;   /* stack of flags whether to capture displays or not */
 long captured_displays; /* stack of stubs to collect captured displays on */
@@ -116,7 +113,6 @@ long read_expr(long rparenokay); /* read s-exp from Turing machine tape */
 
 int main(void) /* lisp main program */
 {
-  time1 = time(NULL); /* start timer */
   printf("LISP Interpreter Run\n");
   initialize_atoms();
 
@@ -352,12 +348,8 @@ long in_word2(void) {       /* read word */
     do {                                 /* read characters until '\n' */
       character = getchar();
       if (character == EOF) {
-        time2 = time(NULL);
         printf("End of LISP Run\n\nCalls to eval = %ld\nCalls to cons = %ld\n",
                time_eval, next_free
-               // difftime(time2,time1)
-               /* on some systems, above line should instead be: */
-               /* time2 - time1 */
                );
         exit(0); /* terminate execution */
       }          /* end of if (character == EOF) */

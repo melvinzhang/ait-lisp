@@ -23,8 +23,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define SIZE 1000000 /* numbers of nodes of tree storage */
-#define nil 0        /* end of list marker */
+// numbers of nodes of tree storage
+#define SIZE 1000000
+// end of list marker
+#define nil 0
 
 #define PFCAR 1
 #define PFCDR 2
@@ -50,92 +52,151 @@
 #define PFBITS 22
 #define PFREADEXP 23
 
-long car[SIZE], cdr[SIZE]; /* tree storage */
-short atom[SIZE];          /* is it an atom? */
-short numb[SIZE];          /* is it a number? */
-/* The following is only used for atoms */
-long vlst[SIZE];  /* bindings of each atom */
-long pname[SIZE]; /* print name of each atom = list of characters in reverse */
-/* The following is only used for atoms that are the names of primitive
- * functions */
-short pf_numb[SIZE]; /* primitive function number (for interpreter switch) */
-short pf_args[SIZE]; /* number of arguments + 1 (for input parser) */
+// tree storage
+long car[SIZE], cdr[SIZE];
+// is it an atom?
+short atom[SIZE];
+// is it a number?
+short numb[SIZE];
 
-long obj_lst; /* list of all atoms (& every other token read except numbers) */
+// The following are only used for atoms
 
-/* locations of atoms in tree storage */
-long wrd_nil, wrd_true, wrd_false, wrd_define, wrd_let, wrd_lambda, wrd_quote,
-    wrd_if;
+// bindings of each atom
+long vlst[SIZE];
+// print name of each atom = list of characters in reverse
+long pname[SIZE];
+
+// The following are only used for atoms that are the names of primitive functions
+
+// primitive function number (for interpreter switch)
+short pf_numb[SIZE];
+// number of arguments + 1 (for input parser)
+short pf_args[SIZE];
+
+// list of all atoms (& every other token read except numbers)
+long obj_lst;
+
+// locations of atoms in tree storage
+long wrd_nil, wrd_true, wrd_false, wrd_define, wrd_let, wrd_lambda, wrd_quote, wrd_if;
 long wrd_car, wrd_cdr, wrd_cadr, wrd_caddr, wrd_eval, wrd_try;
-long wrd_no_time_limit, wrd_out_of_time, wrd_out_of_data, wrd_success,
-    wrd_failure;
+long wrd_no_time_limit, wrd_out_of_time, wrd_out_of_data, wrd_success, wrd_failure;
 long left_bracket, right_bracket, left_paren, right_paren, double_quote;
 long wrd_zero, wrd_one;
 long wrd_read_exp, wrd_utm;
 
-long next_free = 0;        /* next free node */
-long col = 0;              /* column in each 50 character chunk of output
-                              (preceeded by 12 char prefix) */
-long time_eval = 0;        /* number of calls to eval */
-long turing_machine_tapes; /* stack of binary data for try's */
-long display_enabled;   /* stack of flags whether to capture displays or not */
-long captured_displays; /* stack of stubs to collect captured displays on */
-long q;                 /* for converting s-expressions into lists of bits */
-long buffer2; /* buffer for converting lists of bits into s-expressions */
-              /* contains list of all the words in an input record */
+// next free node
+long next_free = 0;
+// column in each 50 character chunk of output
+// (preceeded by 12 char prefix)
+long col = 0;
+// number of calls to eval
+long time_eval = 0;
+// stack of binary data for try's
+long turing_machine_tapes;
+// stack of flags whether to capture displays or not
+long display_enabled;
+// stack of stubs to collect captured displays on
+long captured_displays;
+// for converting s-expressions into lists of bits
+long q;
+// buffer for converting lists of bits into s-expressions
+// contains list of all the words in an input record
+long buffer2;
 
-void initialize_atoms(void);                            /* initialize atoms */
-long mk_atom(long number, char const *name, long args); /* make an atom */
-long mk_numb(long value);                               /* make an number */
-long mk_string(char const *p);       /* make list of characters */
-long eq_wrd(long x, long y);         /* are two lists of characters equal ? */
-long lookup_word(long x);            /* look up word in object list ? */
-long cons(long x, long y);           /* get free node & stuff x & y in it */
-long out(char const *x, long y);     /* output expression */
-void out_lst(long x);                /* output list */
-void out_atm(long x);                /* output atom */
-void out_chr(long x);                /* output character */
-long in_word2(void);                 /* read word */
-long in_word(void);                  /* read word - skip comments */
-long in(long mexp, long rparenokay); /* input m-exp */
-long only_digits(
-    long x);     /* check if list of characters are exclusively digits */
-long ev(long e); /* initialize and evaluate expression */
-long eval(long e, long d);   /* evaluate expression */
-long evalst(long e, long d); /* evaluate list of expressions */
-void clean_env(void);        /* clean environment */
-void restore_env(void);      /* restore unclean environment */
-/* bind values of arguments to formal parameters */
+
+// initialize atoms
+void initialize_atoms(void);
+// make an atom
+long mk_atom(long number, char const *name, long args);
+// make an number
+long mk_numb(long value);
+// make list of characters
+long mk_string(char const *p);
+// are two lists of characters equal ?
+long eq_wrd(long x, long y);
+// look up word in object list ?
+long lookup_word(long x);
+// get free node & stuff x & y in it
+long cons(long x, long y);
+// output expression
+long out(char const *x, long y);
+// output list
+void out_lst(long x);
+// output atom
+void out_atm(long x);
+// output character
+void out_chr(long x);
+// read word
+long in_word2(void);
+// read word - skip comments
+long in_word(void);
+// input m-exp
+long in(long mexp, long rparenokay);
+// check if list of characters are exclusively digits
+long only_digits(long x);
+// initialize and evaluate expression
+long ev(long e);
+// evaluate expression
+long eval(long e, long d);
+// evaluate list of expressions
+long evalst(long e, long d);
+// clean environment
+void clean_env(void);
+// restore unclean environment
+void restore_env(void);
+// bind values of arguments to formal parameters
 void bind(long vars, long args);
-long append(long x, long y);  /* append two lists */
-long eq(long x, long y);      /* equal predicate */
-long length(long x);          /* number of elements in list */
-long compare(long x, long y); /* compare two decimal numbers */
-long add1(long x);            /* add 1 to decimal number */
-long sub1(long x);            /* subtract 1 from decimal number */
-long nmb(
-    long x); /* pick-up decimal number from atom & convert non-number to zero */
-long remove_leading_zeros(
-    long x); /* from reversed list of digits of decimal number */
-long addition(long x, long y, long carry_in); /* add two decimal numbers */
-long multiplication(long x, long y);          /* multiply two decimal numbers */
-long exponentiation(long base,
-                    long exponent); /* base raised to the power exponent */
-long subtraction(long x, long y, long borrow_in); /* x - y assumes x >= y */
-long base2_to_10(long x); /* convert bit string to decimal number */
-long halve(long x);       /* used to convert decimal number to bit string */
-long base10_to_2(long x); /* convert decimal number to bit string */
-long size(long x);        /* number of characters in print representation */
-long read_bit(void);      /* read one square of Turing machine tape */
-void write_chr(long x);   /* convert character into 8 bits */
-void write_atm(long x);   /* convert atom into 8 bits per character */
-void write_lst(long x);   /* convert s-exp into list of bits */
-long read_record(void);   /* read record from Turing machine tape */
-long read_char(void);     /* read one character from Turing machine tape */
-long read_word(void);     /* read word from Turing machine tape */
-long read_expr(long rparenokay); /* read s-exp from Turing machine tape */
+// append two lists
+long append(long x, long y);
+// equal predicate
+long eq(long x, long y);
+// number of elements in list
+long length(long x);
+// compare two decimal numbers
+long compare(long x, long y);
+// add 1 to decimal number
+long add1(long x);
+// subtract 1 from decimal number
+long sub1(long x);
+// pick-up decimal number from atom & convert non-number to zero
+long nmb(long x);
+// from reversed list of digits of decimal number
+long remove_leading_zeros(long x);
+// add two decimal numbers
+long addition(long x, long y, long carry_in);
+// multiply two decimal numbers
+long multiplication(long x, long y);
+// base raised to the power exponent
+long exponentiation(long base, long exponent);
+// x - y assumes x >= y
+long subtraction(long x, long y, long borrow_in);
+// convert bit string to decimal number
+long base2_to_10(long x);
+// used to convert decimal number to bit string
+long halve(long x);
+// convert decimal number to bit string
+long base10_to_2(long x);
+// number of characters in print representation
+long size(long x);
+// read one square of Turing machine tape
+long read_bit(void);
+// convert character into 8 bits
+void write_chr(long x);
+// convert atom into 8 bits per character
+void write_atm(long x);
+// convert s-exp into list of bits
+void write_lst(long x);
+// read record from Turing machine tape
+long read_record(void);
+// read one character from Turing machine tape
+long read_char(void);
+// read word from Turing machine tape
+long read_word(void);
+// read s-exp from Turing machine tape
+long read_expr(long rparenokay);
 
-int main(void) /* lisp main program */
+// lisp main program
+int main(void)
 {
   printf("LISP Interpreter Run\n");
   initialize_atoms();

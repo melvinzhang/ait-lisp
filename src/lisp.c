@@ -1,4 +1,4 @@
-/* lisp.c: high-speed LISP interpreter */
+// lisp.c: high-speed LISP interpreter
 
 /*
    The storage required by this interpreter is 8 * 4 = 32 bytes times
@@ -66,7 +66,8 @@ long vlst[SIZE];
 // print name of each atom = list of characters in reverse
 long pname[SIZE];
 
-// The following are only used for atoms that are the names of primitive functions
+// The following are only used for atoms that are the names of primitive
+// functions
 
 // primitive function number (for interpreter switch)
 short pf_numb[SIZE];
@@ -77,9 +78,11 @@ short pf_args[SIZE];
 long obj_lst;
 
 // locations of atoms in tree storage
-long wrd_nil, wrd_true, wrd_false, wrd_define, wrd_let, wrd_lambda, wrd_quote, wrd_if;
+long wrd_nil, wrd_true, wrd_false, wrd_define, wrd_let, wrd_lambda, wrd_quote,
+    wrd_if;
 long wrd_car, wrd_cdr, wrd_cadr, wrd_caddr, wrd_eval, wrd_try;
-long wrd_no_time_limit, wrd_out_of_time, wrd_out_of_data, wrd_success, wrd_failure;
+long wrd_no_time_limit, wrd_out_of_time, wrd_out_of_data, wrd_success,
+    wrd_failure;
 long left_bracket, right_bracket, left_paren, right_paren, double_quote;
 long wrd_zero, wrd_one;
 long wrd_read_exp, wrd_utm;
@@ -102,7 +105,6 @@ long q;
 // buffer for converting lists of bits into s-expressions
 // contains list of all the words in an input record
 long buffer2;
-
 
 // initialize atoms
 void initialize_atoms(void);
@@ -196,52 +198,52 @@ long read_word(void);
 long read_expr(long rparenokay);
 
 // lisp main program
-int main(void)
-{
+int main(void) {
   printf("LISP Interpreter Run\n");
   initialize_atoms();
 
   while (1) {
     long e, f, name, def;
     printf("\n");
-    /* read lisp meta-expression, ) not okay */
+    // read lisp meta-expression, ) not okay
     e = in(1, 0);
     printf("\n");
     f = car[e];
     name = car[cdr[e]];
     def = car[cdr[cdr[e]]];
     if (f == wrd_define) {
-      /* definition */
+      // definition
       if (atom[name]) {
-        /* variable definition, e.g., define x (a b c) */
-      }
-      else {
-        /* function definition, e.g., define (F x y) cons x cons y nil */
+        // variable definition, e.g., define x (a b c)
+      } else {
+        // function definition, e.g., define (F x y) cons x cons y nil
         long var_list = cdr[name];
         name = car[name];
         def = cons(wrd_lambda, cons(var_list, cons(def, nil)));
       }
       out("define", name);
       out("value", def);
-      /* new binding replaces old */
+      // new binding replaces old
       car[vlst[name]] = def;
       continue;
     }
-    /* write corresponding s-expression */
+    // write corresponding s-expression
     e = out("expression", e);
-    /* evaluate expression */
+    // evaluate expression
     e = out("value", ev(e));
   }
 }
 
-void initialize_atoms(void) /* initialize atoms */
-{
+// initialize atoms
+void initialize_atoms(void) {
   if (nil != mk_atom(0, "()", 0)) {
     printf("nil != 0\n");
-    exit(0); /* terminate execution */
+    // terminate execution
+    exit(0);
   }
   wrd_nil = mk_atom(0, "nil", 0);
-  car[vlst[wrd_nil]] = nil; /* so that value of nil is () */
+  // so that value of nil is ()
+  car[vlst[wrd_nil]] = nil;
   wrd_true = mk_atom(0, "true", 0);
   wrd_false = mk_atom(0, "false", 0);
   wrd_no_time_limit = mk_atom(0, "no-time-limit", 0);
@@ -291,53 +293,59 @@ void initialize_atoms(void) /* initialize atoms */
   wrd_one = mk_numb(cons('1', nil));
 }
 
-long mk_atom(long number, char const *name, long args) /* make an atom */
-{
+// make an atom
+long mk_atom(long number, char const *name, long args) {
   long a;
-  a = cons(nil, nil);  /* get an empty node */
-  car[a] = cdr[a] = a; /* so that car & cdr of atom = atom */
+  // get an empty node
+  a = cons(nil, nil);
+  // so that car & cdr of atom = atom
+  car[a] = cdr[a] = a;
   atom[a] = 1;
   numb[a] = 0;
   pname[a] = mk_string(name);
   pf_numb[a] = number;
   pf_args[a] = args;
-  /* initially each atom evaluates to self */
+  // initially each atom evaluates to self
   vlst[a] = cons(a, nil);
-  /* put on object list */
+  // put on object list
   obj_lst = cons(a, obj_lst);
   return a;
 }
 
-long mk_numb(long value) /* make an number */
-{ /* digits are in reverse order, and 0 has empty list of digits */
+// make an number
+long mk_numb(long value) {
+  // digits are in reverse order, and 0 has empty list of digits
   long a;
-  a = cons(nil, nil);  /* get an empty node */
-  car[a] = cdr[a] = a; /* so that car & cdr of atom = atom */
+  // get an empty node
+  a = cons(nil, nil);
+  // so that car & cdr of atom = atom
+  car[a] = cdr[a] = a;
   atom[a] = 1;
   numb[a] = 1;
-  pname[a] =
-      value; /* must make 00099 into 99 and 000 into empty list of digits */
-  /* if necessary before calling this routine (to avoid removing leading zeros
-   * unnecessarily) */
+  // must make 00099 into 99 and 000 into empty list of digits
+  // if necessary before calling this routine (to avoid removing leading zeros
+  // unnecessarily)
+  pname[a] = value;
   pf_numb[a] = 0;
   pf_args[a] = 0;
   vlst[a] = 0;
-  /* do not put on object list ! */
+  // do not put on object list !
   return a;
 }
 
-long mk_string(char const *p) /* make list of characters */
-{                             /* in reverse order */
+// make list of characters
+long mk_string(char const *p) {
+  // in reverse order
   long v = nil;
   while (*p != '\0') v = cons(*p++, v);
   return v;
 }
 
-long cons(long x, long y) /* get free node & stuff x & y in it */
-{
+// get free node & stuff x & y in it
+long cons(long x, long y) {
   long z;
 
-  /* if y is not a list, then cons is x */
+  // if y is not a list, then cons is x
   if (y != nil && atom[y]) return x;
 
   if (next_free >= SIZE) {
@@ -358,22 +366,22 @@ long cons(long x, long y) /* get free node & stuff x & y in it */
   return z;
 }
 
-long out(char const *x, long y) /* output expression */
-{
+// output expression
+long out(char const *x, long y) {
   printf("%-12s", x);
-  col = 0; /* so can insert \n and 12 blanks
-              every 50 characters of output */
+  // so can insert \n and 12 blanks every 50 characters of output
+  col = 0;
   out_lst(y);
   printf("\n");
   return y;
 }
 
-void out_lst(long x) /* output list */
-{
+// output list
+void out_lst(long x) {
   if (numb[x] && pname[x] == nil) {
     out_chr('0');
     return;
-  } /* null list of digits means zero */
+  }  // null list of digits means zero
   if (atom[x]) {
     out_atm(pname[x]);
     return;
@@ -387,15 +395,16 @@ void out_lst(long x) /* output list */
   out_chr(')');
 }
 
-void out_atm(long x) /* output atom */
-{
+// output atom
+void out_atm(long x) {
   if (x == nil) return;
-  out_atm(cdr[x]); /* output characters in reverse order */
+  // output characters in reverse order
+  out_atm(cdr[x]);
   out_chr(car[x]);
 }
 
-void out_chr(long x) /* output character */
-{
+// output character
+void out_chr(long x) {
   if (col++ == 50) {
     printf("\n%-12s", " ");
     col = 1;
@@ -403,87 +412,98 @@ void out_chr(long x) /* output character */
   putchar(x);
 }
 
-long eq_wrd(long x, long y) /* are two lists of characters equal ? */
-{
+// are two lists of characters equal ?
+long eq_wrd(long x, long y) {
   if (x == nil) return y == nil;
   if (y == nil) return 0;
   if (car[x] != car[y]) return 0;
   return eq_wrd(cdr[x], cdr[y]);
 }
 
-long lookup_word(long x) /* is word in object list ? */
-{
+// is word in object list ?
+long lookup_word(long x) {
   long i = obj_lst;
   while (!atom[i]) {
-    /* if word is already in object list, don't make a new atom */
+    // if word is already in object list, don't make a new atom
     if (eq_wrd(pname[car[i]], x)) return car[i];
     i = cdr[i];
   }
-  /* if word isn't in object list, make new atom & add it to object list */
-  i = mk_atom(0, "", 0); /* adds word to object list */
+  // if word isn't in object list, make new atom & add it to object list
+  // adds word to object list
+  i = mk_atom(0, "", 0);
   pname[i] = x;
   return i;
 }
 
-long in_word2(void) {       /* read word */
-  static long buffer = nil; /* buffer with all the words in a line of input */
+// read word
+long in_word2(void) {
+  // buffer with all the words in a line of input
+  static long buffer = nil;
   long character, word, line, end_of_line, end_of_buffer;
-  while (buffer == nil) {                /* read in a line */
-    line = end_of_line = cons(nil, nil); /* stub */
-    do {                                 /* read characters until '\n' */
+  // read in a line
+  while (buffer == nil) {
+    // stub
+    line = end_of_line = cons(nil, nil);
+    // read characters until '\n'
+    do {
       character = getchar();
       if (character == EOF) {
         printf(
-          "End of LISP Run\n\n"
-          "Calls to eval = %ld\n"
-          "Calls to cons = %ld\n",
-          time_eval, next_free
-        );
-        exit(0); /* terminate execution */
+            "End of LISP Run\n\n"
+            "Calls to eval = %ld\n"
+            "Calls to cons = %ld\n",
+            time_eval, next_free);
+        // terminate execution
+        exit(0);
       }
       putchar(character);
-      /* add character to end of line */
+      // add character to end of line
       end_of_line = cdr[end_of_line] = cons(character, nil);
-    }
-    while (character != '\n');
-    line = cdr[line]; /* remove stub at beginning of line */
-    /* break line into words at  ( ) [ ] ' " characters */
-    buffer = end_of_buffer = cons(nil, nil); /* stub */
+    } while (character != '\n');
+    // remove stub at beginning of line
+    line = cdr[line];
+    // break line into words at  ( ) [ ] ' " characters
+    // stub
+    buffer = end_of_buffer = cons(nil, nil);
     word = nil;
     while (line != nil) {
       character = car[line];
       line = cdr[line];
-      /* look for characters that break words */
+      // look for characters that break words
       if (character == ' ' || character == '\n' || character == '(' ||
           character == ')' || character == '[' || character == ']' ||
           character == '\'' ||
-          character == '\"') { /* add nonempty word to end of buffer */
+          // add nonempty word to end of buffer
+          character == '\"') {
         if (word != nil) end_of_buffer = cdr[end_of_buffer] = cons(word, nil);
         word = nil;
-        /* add break character to end of buffer */
+        // add break character to end of buffer
         if (character != ' ' && character != '\n')
           end_of_buffer = cdr[end_of_buffer] = cons(cons(character, nil), nil);
-      } else { /* add character to word (in reverse order) */
-        /* keep only nonblank printable ASCII codes */
+      }  // add character to word (in reverse order)
+      else {
+        // keep only nonblank printable ASCII codes
         if (32 < character && character < 127) word = cons(character, word);
       }
     }
-    buffer = cdr[buffer]; /* remove stub at beginning of buffer */
+    // remove stub at beginning of buffer
+    buffer = cdr[buffer];
   }
-  /* if buffer nonempty, return first word in buffer */
+  // if buffer nonempty, return first word in buffer
   word = car[buffer];
   buffer = cdr[buffer];
-  /* first check if word consists only of digits */
+  // first check if word consists only of digits
   if (only_digits(word)) word = mk_numb(remove_leading_zeros(word));
-  /* also makes 00099 into 99 and 0000 into null */
+  // also makes 00099 into 99 and 0000 into null
   else
-    word = lookup_word(word); /* look up word in object list */
-  /* also does mk_atom and adds it to object list if necessary */
+    // look up word in object list
+    word = lookup_word(word);
+  // also does mk_atom and adds it to object list if necessary
   return word;
 }
 
-long only_digits(long x) /* check if list of characters are exclusively digits */
-{
+// check if list of characters are exclusively digits
+long only_digits(long x) {
   while (x != nil) {
     long digit = car[x];
     if (digit < '0' || digit > '9') return 0;
@@ -492,19 +512,19 @@ long only_digits(long x) /* check if list of characters are exclusively digits *
   return 1;
 }
 
-long in_word(void) /* read word - skip comments */
-{
+// read word - skip comments
+long in_word(void) {
   long w;
   while (1) {
     w = in_word2();
     if (w != left_bracket) return w;
     while (in_word() != right_bracket)
-      ; /* comments may be nested */
+      ;  // comments may be nested
   }
 }
 
-long in(long mexp, long rparenokay) /* input m-exp */
-{
+// input m-exp
+long in(long mexp, long rparenokay) {
   long w = in_word(), first, last, next, name, def, body, var_lst, i;
   if (w == right_paren) {
     if (rparenokay) {
@@ -513,20 +533,25 @@ long in(long mexp, long rparenokay) /* input m-exp */
       return nil;
     }
   }
-  if (w == left_paren) { /* explicit list */
+  // explicit list
+  if (w == left_paren) {
     first = last = cons(nil, nil);
     while ((next = in(mexp, 1)) != right_paren)
       last = cdr[last] = cons(next, nil);
     return cdr[first];
   }
-  if (!mexp) return w;                    /* atom */
-  if (w == double_quote) return in(0, 0); /* s-exp */
-  if (w == wrd_cadr) {  /* expand cadr */
+  // atom
+  if (!mexp) return w;
+  // s-exp
+  if (w == double_quote) return in(0, 0);
+  // expand cadr
+  if (w == wrd_cadr) {
     long sexp = in(1, 0);
     sexp = cons(wrd_cdr, cons(sexp, nil));
     return cons(wrd_car, cons(sexp, nil));
   }
-  if (w == wrd_caddr) { /* expand caddr */
+  // expand caddr
+  if (w == wrd_caddr) {
     long sexp = in(1, 0);
     sexp = cons(wrd_cdr, cons(sexp, nil));
     sexp = cons(wrd_cdr, cons(sexp, nil));
@@ -535,38 +560,45 @@ long in(long mexp, long rparenokay) /* input m-exp */
   if (w == wrd_utm) {
     long sexp = in(1, 0);
     sexp = cons(sexp, nil);
-    sexp = cons(cons(wrd_quote, cons(cons(wrd_eval, cons(cons(wrd_read_exp, nil), nil)), nil)), sexp);
+    sexp = cons(
+        cons(wrd_quote,
+             cons(cons(wrd_eval, cons(cons(wrd_read_exp, nil), nil)), nil)),
+        sexp);
     sexp = cons(wrd_try, cons(wrd_no_time_limit, sexp));
     sexp = cons(wrd_cdr, cons(sexp, nil));
     sexp = cons(wrd_car, cons(sexp, nil));
     return sexp;
   }
-  if (w == wrd_let) { /* expand let name def body  */
+  // expand let name def body
+  if (w == wrd_let) {
     name = in(1, 0);
     def = in(1, 0);
     body = in(1, 0);
-    if (!atom[name]) { /* let (name var_lst) def body */
+    // let (name var_lst) def body
+    if (!atom[name]) {
       var_lst = cdr[name];
       name = car[name];
       def = cons(wrd_quote,
                  cons(cons(wrd_lambda, cons(var_lst, cons(def, nil))), nil));
     }
-    return /* let name def body */
-        cons(cons(wrd_quote,
-                  cons(cons(wrd_lambda, cons(cons(name, nil), cons(body, nil))),
-                       nil)),
-             cons(def, nil));
+    // let name def body
+    return cons(
+        cons(wrd_quote,
+             cons(cons(wrd_lambda, cons(cons(name, nil), cons(body, nil))),
+                  nil)),
+        cons(def, nil));
   }
   i = pf_args[w];
-  if (i == 0) return w; /* normal atom */
-  /* atom is a primitive function with i-1 arguments */
+  // normal atom
+  if (i == 0) return w;
+  // atom is a primitive function with i-1 arguments
   first = last = cons(w, nil);
   while (--i > 0) last = cdr[last] = cons(in(1, 0), nil);
   return first;
 }
 
-long ev(long e) /* initialize and evaluate expression */
-{
+// initialize and evaluate expression
+long ev(long e) {
   long v;
   turing_machine_tapes = cons(nil, nil);
   display_enabled = cons(1, nil);
@@ -575,43 +607,52 @@ long ev(long e) /* initialize and evaluate expression */
   return (v < 0 ? -v : v);
 }
 
-long eval(long e, long d) /* evaluate expression */
-{
-  /*
-   e is expression to be evaluated
-   d is permitted depth - decimal integer, or wrd_no_time_limit
-  */
+// evaluate expression
+long eval(long e, long d) {
+  // e is expression to be evaluated
+  // d is permitted depth - decimal integer, or wrd_no_time_limit
   long f, v, args, x, y, z, vars, body, var;
 
   time_eval++;
 
   if (numb[e]) return e;
-  /* find current binding of atomic expression */
+  // find current binding of atomic expression
   if (atom[e]) return car[vlst[e]];
 
-  /* lambda expression evaluates to itself */
+  // lambda expression evaluates to itself
   if (car[e] == wrd_lambda) return e;
 
-  f = eval(car[e], d); /* evaluate function */
-  e = cdr[e];          /* remove function from list of arguments */
-  if (f < 0) return f; /* function = error value? */
+  // evaluate function
+  f = eval(car[e], d);
+  // remove function from list of arguments
+  e = cdr[e];
+  // function = error value?
+  if (f < 0) return f;
 
-  if (f == wrd_quote) return car[e]; /* quote */
+  // quote
+  if (f == wrd_quote) return car[e];
 
-  if (f == wrd_if) { /* if then else */
+  // if then else
+  if (f == wrd_if) {
     v = eval(car[e], d);
     e = cdr[e];
-    if (v < 0) return v; /* error? */
+    // error?
+    if (v < 0) return v;
     if (v == wrd_false) e = cdr[e];
     return eval(car[e], d);
   }
 
-  args = evalst(e, d);       /* evaluate list of arguments */
-  if (args < 0) return args; /* error? */
+  // evaluate list of arguments
+  args = evalst(e, d);
+  // error?
+  if (args < 0) return args;
 
-  x = car[args];           /* pick up first argument */
-  y = car[cdr[args]];      /* pick up second argument */
-  z = car[cdr[cdr[args]]]; /* pick up third argument */
+  // pick up first argument
+  x = car[args];
+  // pick up second argument
+  y = car[cdr[args]];
+  // pick up third argument
+  z = car[cdr[cdr[args]]];
 
   switch (pf_numb[f]) {
     case PFCAR:
@@ -647,37 +688,45 @@ long eval(long e, long d) /* evaluate expression */
     case PFGT:
       return (compare(nmb(x), nmb(y)) == '>' ? wrd_true : wrd_false);
     case PFLEQ:
-      return (compare(nmb(x), nmb(y)) != '>' ? wrd_true : wrd_false); /* <= */
+      // <=
+      return (compare(nmb(x), nmb(y)) != '>' ? wrd_true : wrd_false);
     case PFGEQ:
-      return (compare(nmb(x), nmb(y)) != '<' ? wrd_true : wrd_false); /* >= */
+      // >=
+      return (compare(nmb(x), nmb(y)) != '<' ? wrd_true : wrd_false);
     case PFPLUS:
-      return mk_numb(addition(nmb(x), nmb(y), 0)); /* no carry in initially */
+      // no carry in initially
+      return mk_numb(addition(nmb(x), nmb(y), 0));
     case PFTIMES:
       return mk_numb(multiplication(nmb(x), nmb(y)));
     case PFPOW:
       return mk_numb(exponentiation(nmb(x), nmb(y)));
     case PFMINUS:
       if (compare(nmb(x), nmb(y)) != '>')
-        return mk_numb(nil); /* y too big to subtract from x */
+        // y too big to subtract from x
+        return mk_numb(nil);
       else
         return mk_numb(remove_leading_zeros(subtraction(nmb(x), nmb(y), 0)));
-    /* no borrow in initially */
+    // no borrow in initially
     case PF2TO10:
-      return mk_numb(base2_to_10(x)); /* convert bit string to decimal number */
+      // convert bit string to decimal number
+      return mk_numb(base2_to_10(x));
     case PF10TO2:
-      return base10_to_2(nmb(x)); /* convert decimal number to bit string */
+      // convert decimal number to bit string
+      return base10_to_2(nmb(x));
     case PFSIZE:
-      return mk_numb(size(x)); /* size of print representation of x */
+      // size of print representation of x
+      return mk_numb(size(x));
     case PFREADBIT:
-      return read_bit(); /* read one square of Turing machine tape */
-                         /* convert s-exp to list of bits */
+      // read one square of Turing machine tape
+      return read_bit();
+    // convert s-exp to list of bits
     case PFBITS: {
       v = q = cons(nil, nil);
       write_lst(x);
       write_chr('\n');
       return cdr[v];
     }
-    /* read lisp s-expression from Turing machine tape, 8 bits per char */
+    // read lisp s-expression from Turing machine tape, 8 bits per char
     case PFREADEXP: {
       v = read_record();
       if (v < 0) return v;
@@ -686,37 +735,47 @@ long eval(long e, long d) /* evaluate expression */
   }
 
   if (d != wrd_no_time_limit) {
-    if (d == nil) return -wrd_out_of_time; /* depth exceeded -> error! */
-    d = sub1(d);                           /* decrement depth */
+    // depth exceeded -> error!
+    if (d == nil) return -wrd_out_of_time;
+    // decrement depth
+    d = sub1(d);
   }
 
   if (f == wrd_eval) {
-    clean_env(); /* clean environment */
+    // clean environment
+    clean_env();
     v = eval(x, d);
-    restore_env(); /* restore unclean environment */
+    // restore unclean environment
+    restore_env();
     return v;
   }
 
   if (f == wrd_try) {
     long stub,
-        old_try_has_smaller_time_limit = 0; /* assume normal case, that x < d */
-    if (x != wrd_no_time_limit) x = nmb(x); /* convert s-exp into number */
+        // assume normal case, that x < d
+        old_try_has_smaller_time_limit = 0;
+    // convert s-exp into number
+    if (x != wrd_no_time_limit) x = nmb(x);
     if (x == wrd_no_time_limit ||
         (d != wrd_no_time_limit && compare(x, d) != '<')) {
       old_try_has_smaller_time_limit = 1;
-      x = d; /* continue to use older more constraining time limit */
+      // continue to use older more constraining time limit
+      x = d;
     }
     turing_machine_tapes = cons(z, turing_machine_tapes);
     display_enabled = cons(0, display_enabled);
-    stub = cons(0, nil); /* stub to grow list on */
-    car[stub] = stub;    /* car of stub gives end of list */
+    // stub to grow list on
+    stub = cons(0, nil);
+    // car of stub gives end of list
+    car[stub] = stub;
     captured_displays = cons(stub, captured_displays);
     clean_env();
     v = eval(y, x);
     restore_env();
     turing_machine_tapes = cdr[turing_machine_tapes];
     display_enabled = cdr[display_enabled];
-    stub = cdr[car[captured_displays]]; /* remove stub */
+    // remove stub
+    stub = cdr[car[captured_displays]];
     captured_displays = cdr[captured_displays];
     if (old_try_has_smaller_time_limit && v == -wrd_out_of_time) return v;
     if (v < 0) return cons(wrd_failure, cons(-v, cons(stub, nil)));
@@ -734,7 +793,7 @@ long eval(long e, long d) /* evaluate expression */
 
     v = eval(body, d);
 
-    /* unbind */
+    // unbind
     while (!atom[vars]) {
       var = car[vars];
       if (atom[var]) vlst[var] = cdr[vlst[var]];
@@ -747,29 +806,31 @@ long eval(long e, long d) /* evaluate expression */
   return f;
 }
 
-void clean_env(void) /* clean environment */
-{
+// clean environment
+void clean_env(void) {
   long o = obj_lst, var;
   while (o != nil) {
     var = car[o];
-    vlst[var] = cons(var, vlst[var]); /* everything eval's to self */
+    // everything eval's to self
+    vlst[var] = cons(var, vlst[var]);
     o = cdr[o];
   }
-  car[vlst[wrd_nil]] = nil; /* except that value of nil is () */
+  // except that value of nil is ()
+  car[vlst[wrd_nil]] = nil;
 }
 
-void restore_env(void) /* restore unclean environment */
-{
+// restore unclean environment
+void restore_env(void) {
   long o = obj_lst, var;
   while (o != nil) {
     var = car[o];
-    if (cdr[vlst[var]] != nil) /* was token read in by read-exp within a try */
-      vlst[var] = cdr[vlst[var]];
+    // was token read in by read-exp within a try
+    if (cdr[vlst[var]] != nil) vlst[var] = cdr[vlst[var]];
     o = cdr[o];
   }
 }
 
-/* bind values of arguments to formal parameters */
+// bind values of arguments to formal parameters
 void bind(long vars, long args) {
   long var;
   if (atom[vars]) return;
@@ -778,25 +839,27 @@ void bind(long vars, long args) {
   if (atom[var]) vlst[var] = cons(car[args], vlst[var]);
 }
 
-long evalst(long e, long d) /* evaluate list of expressions */
-{
+// evaluate list of expressions
+long evalst(long e, long d) {
   long x, y;
   if (e == nil) return nil;
   x = eval(car[e], d);
-  if (x < 0) return x; /* error? */
+  // error?
+  if (x < 0) return x;
   y = evalst(cdr[e], d);
-  if (y < 0) return y; /* error? */
+  // error?
+  if (y < 0) return y;
   return cons(x, y);
 }
 
-long append(long x, long y) /* append two lists */
-{
+// append two lists
+long append(long x, long y) {
   if (x == nil) return y;
   return cons(car[x], append(cdr[x], y));
 }
 
-long eq(long x, long y) /* equal predicate */
-{
+// equal predicate
+long eq(long x, long y) {
   if (x == y) return 1;
   if (numb[x] && numb[y]) return eq_wrd(pname[x], pname[y]);
   if (numb[x] || numb[y]) return 0;
@@ -805,14 +868,15 @@ long eq(long x, long y) /* equal predicate */
   return 0;
 }
 
-long length(long x) /* number of elements in list */
-{
-  if (atom[x]) return nil; /* is zero */
+// number of elements in list
+long length(long x) {
+  // is zero
+  if (atom[x]) return nil;
   return add1(length(cdr[x]));
 }
 
-long compare(long x, long y) /* compare two decimal numbers */
-{
+// compare two decimal numbers
+long compare(long x, long y) {
   long already_decided, digit1, digit2;
   if (x == nil && y == nil) return '=';
   if (x == nil && y != nil) return '<';
@@ -826,8 +890,8 @@ long compare(long x, long y) /* compare two decimal numbers */
   return '=';
 }
 
-long add1(long x) /* add 1 to decimal number */
-{
+// add 1 to decimal number
+long add1(long x) {
   long digit;
   if (x == nil) return cons('1', nil);
   digit = car[x];
@@ -835,24 +899,26 @@ long add1(long x) /* add 1 to decimal number */
   return cons('0', add1(cdr[x]));
 }
 
-long sub1(long x) /* subtract 1 from decimal number */
-{
+// subtract 1 from decimal number
+long sub1(long x) {
   long digit;
-  if (x == nil) return x; /* 0 - 1 = 0 */
+  // 0 - 1 = 0
+  if (x == nil) return x;
   digit = car[x];
-  if (digit == '1' && cdr[x] == nil) return nil; /* 1 - 1 = 0 */
+  // 1 - 1 = 0
+  if (digit == '1' && cdr[x] == nil) return nil;
   if (digit != '0') return cons(digit - 1, cdr[x]);
   return cons('9', sub1(cdr[x]));
 }
 
-long nmb(long x) /* pick-up decimal number from atom & convert non-number to zero */
-{
+// pick-up decimal number from atom & convert non-number to zero
+long nmb(long x) {
   if (numb[x]) return pname[x];
   return nil;
 }
 
-long remove_leading_zeros(long x) /* from reversed list of digits of decimal number */
-{
+// from reversed list of digits of decimal number
+long remove_leading_zeros(long x) {
   long rest, digit;
   if (x == nil) return nil;
   digit = car[x];
@@ -884,8 +950,8 @@ long addition(long x, long y, long carry_in) {
   return cons(sum - 10, addition(rest1, rest2, 1));
 }
 
-long subtraction(long x, long y, long borrow_in) /* x - y assumes x >= y */
-{
+// x - y assumes x >= y
+long subtraction(long x, long y, long borrow_in) {
   long difference, digit1, digit2, rest1, rest2;
   if (y == nil && !borrow_in) return x;
   if (x != nil) {
@@ -907,15 +973,17 @@ long subtraction(long x, long y, long borrow_in) /* x - y assumes x >= y */
   return cons(difference + 10, subtraction(rest1, rest2, 1));
 }
 
-long multiplication(long x, long y) /* goes faster if x is small */
-{
+// goes faster if x is small
+long multiplication(long x, long y) {
   long sum = nil;
-  if (y == nil) return nil; /* otherwise produces result 0000 */
+  // otherwise produces result 0000
+  if (y == nil) return nil;
   while (x != nil) {
     long digit = car[x];
     while (digit-- > '0') sum = addition(sum, y, 0);
     x = cdr[x];
-    y = cons('0', y); /* these are where bad decimal numbers are generated if y is zero */
+    // these are where bad decimal numbers are generated if y is zero
+    y = cons('0', y);
   }
   return sum;
 }
@@ -923,14 +991,15 @@ long multiplication(long x, long y) /* goes faster if x is small */
 long exponentiation(long base, long exponent) {
   long product = cons('1', nil);
   while (exponent != nil) {
-    product = multiplication(base, product); /* multiply faster if smaller comes first */
+    // multiply faster if smaller comes first
+    product = multiplication(base, product);
     exponent = sub1(exponent);
   }
   return product;
 }
 
-long base2_to_10(long x) /* convert bit string to decimal number */
-{
+// convert bit string to decimal number
+long base2_to_10(long x) {
   long result = nil;
   while (!atom[x]) {
     long next_bit = car[x];
@@ -944,10 +1013,11 @@ long base2_to_10(long x) /* convert bit string to decimal number */
   return result;
 }
 
-long halve(long x) /* used to convert decimal number to bit string */
-{
+// used to convert decimal number to bit string
+long halve(long x) {
   long digit, next_digit, rest, halve_digit;
-  if (x == nil) return x; /* half of 0 is 0 */
+  // half of 0 is 0
+  if (x == nil) return x;
   digit = car[x] - '0';
   x = cdr[x];
   rest = halve(x);
@@ -955,14 +1025,15 @@ long halve(long x) /* used to convert decimal number to bit string */
     next_digit = 0;
   else
     next_digit = car[x] - '0';
-  next_digit = next_digit % 2; /* remainder when divided by 2 */
+  // remainder when divided by 2
+  next_digit = next_digit % 2;
   halve_digit = '0' + (digit / 2) + (5 * next_digit);
   if (halve_digit != '0' || rest != nil) return cons(halve_digit, rest);
   return nil;
 }
 
-long base10_to_2(long x) /* convert decimal number to bit string */
-{
+// convert decimal number to bit string
+long base10_to_2(long x) {
   long bits = nil;
   while (x != nil) {
     long digit = car[x] - '0';
@@ -972,31 +1043,35 @@ long base10_to_2(long x) /* convert decimal number to bit string */
   return bits;
 }
 
-long size(long x) /* number of characters in print representation */
-{
+// number of characters in print representation
+long size(long x) {
   long sum = nil;
-  if (numb[x] && pname[x] == nil) return add1(nil); /* number zero */
+  // number zero
+  if (numb[x] && pname[x] == nil) return add1(nil);
   if (atom[x]) return length(pname[x]);
   while (!atom[x]) {
     sum = addition(sum, size(car[x]), 0);
     x = cdr[x];
-    if (!atom[x]) sum = add1(sum); /* blank separator */
+    // blank separator
+    if (!atom[x]) sum = add1(sum);
   }
-  return add1(add1(sum)); /* open & close paren */
+  // open & close paren
+  return add1(add1(sum));
 }
 
-/* read one square of Turing machine tape */
+// read one square of Turing machine tape
 long read_bit(void) {
   long x, tape = car[turing_machine_tapes];
-  if (atom[tape]) return -wrd_out_of_data; /* tape finished ! */
+  // tape finished !
+  if (atom[tape]) return -wrd_out_of_data;
   x = car[tape];
   car[turing_machine_tapes] = cdr[tape];
   if (!numb[x] || pname[x] != nil) return wrd_one;
   return wrd_zero;
 }
 
-void write_chr(long x) /* convert character to list of 8 bits */
-{
+// convert character to list of 8 bits
+void write_chr(long x) {
   q = cdr[q] = cons((x & 128 ? wrd_one : wrd_zero), nil);
   q = cdr[q] = cons((x & 64 ? wrd_one : wrd_zero), nil);
   q = cdr[q] = cons((x & 32 ? wrd_one : wrd_zero), nil);
@@ -1007,12 +1082,12 @@ void write_chr(long x) /* convert character to list of 8 bits */
   q = cdr[q] = cons((x & 1 ? wrd_one : wrd_zero), nil);
 }
 
-void write_lst(long x) /* convert s-exp to list of bits */
-{
+// convert s-exp to list of bits
+void write_lst(long x) {
   if (numb[x] && pname[x] == nil) {
     write_chr('0');
     return;
-  } /* null list of digits means zero */
+  }  // null list of digits means zero
   if (atom[x]) {
     write_atm(pname[x]);
     return;
@@ -1026,20 +1101,22 @@ void write_lst(long x) /* convert s-exp to list of bits */
   write_chr(')');
 }
 
-void write_atm(long x) /* convert atom to 8 bits per character */
-{
+// convert atom to 8 bits per character
+void write_atm(long x) {
   if (x == nil) return;
-  write_atm(cdr[x]); /* output characters in reverse order */
+  // output characters in reverse order
+  write_atm(cdr[x]);
   write_chr(car[x]);
 }
 
-/* read one character from Turing machine tape */
+// read one character from Turing machine tape
 long read_char(void) {
   long c, b, i = 8;
   c = 0;
   while (i-- > 0) {
     b = read_bit();
-    if (b < 0) return b; /* error? */
+    // error?
+    if (b < 0) return b;
     if (pname[b] != nil)
       b = 1;
     else
@@ -1049,63 +1126,75 @@ long read_char(void) {
   return c;
 }
 
-long read_record(void) /* read record from Turing machine tape */
-{                      /* fill buffer2 with all the words in an input record */
+// read record from Turing machine tape
+long read_record(void) {
+  // fill buffer2 with all the words in an input record
   long character, word, line, end_of_line, end_of_buffer;
-  line = end_of_line = cons(nil, nil); /* stub */
-  do {                                 /* read characters until '\n' */
+  // stub
+  line = end_of_line = cons(nil, nil);
+  // read characters until '\n'
+  do {
     character = read_char();
-    if (character < 0) return character; /* error? */
+    // error?
+    if (character < 0) return character;
     ;
-    /* add character to end of line */
+    // add character to end of line
     end_of_line = cdr[end_of_line] = cons(character, nil);
-  }
-  while (character != '\n');
-  line = cdr[line]; /* remove stub at beginning of line */
-  /* break line into words at ( ) characters */
-  buffer2 = end_of_buffer = cons(nil, nil); /* stub */
+  } while (character != '\n');
+  // remove stub at beginning of line
+  line = cdr[line];
+  // break line into words at ( ) characters
+  // stub
+  buffer2 = end_of_buffer = cons(nil, nil);
   word = nil;
   while (line != nil) {
     character = car[line];
     line = cdr[line];
-    /* look for characters that break words */
+    // look for characters that break words
     if (character == ' ' || character == '\n' || character == '(' ||
-        character == ')') { /* add nonempty word to end of buffer */
+        // add nonempty word to end of buffer
+        character == ')') {
       if (word != nil) end_of_buffer = cdr[end_of_buffer] = cons(word, nil);
       word = nil;
-      /* add break character to end of buffer */
+      // add break character to end of buffer
       if (character != ' ' && character != '\n')
         end_of_buffer = cdr[end_of_buffer] = cons(cons(character, nil), nil);
-    } else { /* add character to word (in reverse order) */
-      /* keep only nonblank printable ASCII codes */
+    }  // add character to word (in reverse order)
+    else {
+      // keep only nonblank printable ASCII codes
       if (32 < character && character < 127) word = cons(character, word);
     }
   }
-  buffer2 = cdr[buffer2]; /* remove stub at beginning of buffer */
-  return 0;               /* indicates no error */
+  // remove stub at beginning of buffer
+  buffer2 = cdr[buffer2];
+  // indicates no error
+  return 0;
 }
 
-long read_word(void) { /* read word from Turing machine tape */
-  /* buffer2 has all the words in the input record */
+// read word from Turing machine tape
+long read_word(void) {
+  // buffer2 has all the words in the input record
   long word;
-  /* (if buffer empty, returns as many right parens as needed) */
+  // (if buffer empty, returns as many right parens as needed)
   if (buffer2 == nil) return right_paren;
-  /* if buffer nonempty, return first word in buffer */
+  // if buffer nonempty, return first word in buffer
   word = car[buffer2];
   buffer2 = cdr[buffer2];
-  /* first check if word consists only of digits */
+  // first check if word consists only of digits
   if (only_digits(word)) word = mk_numb(remove_leading_zeros(word));
-  /* also makes 00099 into 99 and 0000 into null */
+  // also makes 00099 into 99 and 0000 into null
   else
-    word = lookup_word(word); /* look up word in object list */
-  /* also does mk_atom and adds it to object list if necessary */
+    // look up word in object list
+    word = lookup_word(word);
+  // also does mk_atom and adds it to object list if necessary
   return word;
 }
 
-long read_expr(long rparenokay) /* read s-exp from Turing machine tape */
-{
+// read s-exp from Turing machine tape
+long read_expr(long rparenokay) {
   long w = read_word(), first, last, next;
-  if (w < 0) return w; /* error? */
+  // error?
+  if (w < 0) return w;
   if (w == right_paren) {
     if (rparenokay) {
       return w;
@@ -1113,13 +1202,16 @@ long read_expr(long rparenokay) /* read s-exp from Turing machine tape */
       return nil;
     }
   }
-  if (w == left_paren) { /* explicit list */
+  // explicit list
+  if (w == left_paren) {
     first = last = cons(nil, nil);
     while ((next = read_expr(1)) != right_paren) {
-      if (next < 0) return next; /* error? */
+      // error?
+      if (next < 0) return next;
       last = cdr[last] = cons(next, nil);
     }
     return cdr[first];
   }
-  return w; /* normal atom */
+  // normal atom
+  return w;
 }

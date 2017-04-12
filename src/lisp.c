@@ -214,19 +214,19 @@ int main(void)
       /* definition */
       if (atom[name]) {
         /* variable definition, e.g., define x (a b c) */
-      } /* end of variable definition */
+      }
       else {
         /* function definition, e.g., define (F x y) cons x cons y nil */
         long var_list = cdr[name];
         name = car[name];
         def = cons(wrd_lambda, cons(var_list, cons(def, nil)));
-      } /* end of function definition */
+      }
       out("define", name);
       out("value", def);
       /* new binding replaces old */
       car[vlst[name]] = def;
       continue;
-    } /* end of definition */
+    }
     /* write corresponding s-expression */
     e = out("expression", e);
     /* evaluate expression */
@@ -440,11 +440,11 @@ long in_word2(void) {       /* read word */
           time_eval, next_free
         );
         exit(0); /* terminate execution */
-      }          /* end of if (character == EOF) */
+      }
       putchar(character);
       /* add character to end of line */
       end_of_line = cdr[end_of_line] = cons(character, nil);
-    } /* end of read characters until '\n' */
+    }
     while (character != '\n');
     line = cdr[line]; /* remove stub at beginning of line */
     /* break line into words at  ( ) [ ] ' " characters */
@@ -467,9 +467,9 @@ long in_word2(void) {       /* read word */
         /* keep only nonblank printable ASCII codes */
         if (32 < character && character < 127) word = cons(character, word);
       }
-    }                     /* end while ( line != nil ) */
+    }
     buffer = cdr[buffer]; /* remove stub at beginning of buffer */
-  }                       /* end of do while ( buffer == nil ) */
+  }
   /* if buffer nonempty, return first word in buffer */
   word = car[buffer];
   buffer = cdr[buffer];
@@ -518,7 +518,7 @@ long in(long mexp, long rparenokay) /* input m-exp */
     while ((next = in(mexp, 1)) != right_paren)
       last = cdr[last] = cons(next, nil);
     return cdr[first];
-  }                                       /* end if (w == left_paren) */
+  }
   if (!mexp) return w;                    /* atom */
   if (w == double_quote) return in(0, 0); /* s-exp */
   if (w == wrd_cadr) {  /* expand cadr */
@@ -550,13 +550,13 @@ long in(long mexp, long rparenokay) /* input m-exp */
       name = car[name];
       def = cons(wrd_quote,
                  cons(cons(wrd_lambda, cons(var_lst, cons(def, nil))), nil));
-    }      /* end if (!atom[name]) */
+    }
     return /* let name def body */
         cons(cons(wrd_quote,
                   cons(cons(wrd_lambda, cons(cons(name, nil), cons(body, nil))),
                        nil)),
              cons(def, nil));
-  } /* end if (w == wrd_let) */
+  }
   i = pf_args[w];
   if (i == 0) return w; /* normal atom */
   /* atom is a primitive function with i-1 arguments */
@@ -683,7 +683,7 @@ long eval(long e, long d) /* evaluate expression */
       if (v < 0) return v;
       return read_expr(0);
     }
-  } /* end switch (pf_numb[f]) */
+  }
 
   if (d != wrd_no_time_limit) {
     if (d == nil) return -wrd_out_of_time; /* depth exceeded -> error! */
@@ -1059,7 +1059,7 @@ long read_record(void) /* read record from Turing machine tape */
     ;
     /* add character to end of line */
     end_of_line = cdr[end_of_line] = cons(character, nil);
-  } /* end of read characters until '\n' */
+  }
   while (character != '\n');
   line = cdr[line]; /* remove stub at beginning of line */
   /* break line into words at ( ) characters */
@@ -1080,7 +1080,7 @@ long read_record(void) /* read record from Turing machine tape */
       /* keep only nonblank printable ASCII codes */
       if (32 < character && character < 127) word = cons(character, word);
     }
-  }                       /* end while ( line != nil ) */
+  }
   buffer2 = cdr[buffer2]; /* remove stub at beginning of buffer */
   return 0;               /* indicates no error */
 }
@@ -1120,6 +1120,6 @@ long read_expr(long rparenokay) /* read s-exp from Turing machine tape */
       last = cdr[last] = cons(next, nil);
     }
     return cdr[first];
-  }         /* end if (w == left_paren) */
+  }
   return w; /* normal atom */
 }

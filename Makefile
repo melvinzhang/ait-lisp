@@ -43,3 +43,6 @@ tests: $(wildcard */*.l)
 
 runs: $(wildcard */*.l)
 	for i in $^; do ./lisp < $$i > $${i%.l}.r; done
+
+format:
+	clang-format --style=google -i src/lisp.c

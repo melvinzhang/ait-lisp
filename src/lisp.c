@@ -482,8 +482,7 @@ long in_word2(void) {       /* read word */
   return word;
 }
 
-long only_digits(
-    long x) /* check if list of characters are exclusively digits */
+long only_digits(long x) /* check if list of characters are exclusively digits */
 {
   while (x != nil) {
     long digit = car[x];
@@ -522,22 +521,22 @@ long in(long mexp, long rparenokay) /* input m-exp */
   }                                       /* end if (w == left_paren) */
   if (!mexp) return w;                    /* atom */
   if (w == double_quote) return in(0, 0); /* s-exp */
-  if (w == wrd_cadr)                      /* expand cadr */
-    return cons(wrd_car, cons(cons(wrd_cdr, cons(in(1, 0), nil)), nil));
-  if (w == wrd_caddr) /* expand caddr */
-    return cons(
-        wrd_car,
-        cons(cons(wrd_cdr, cons(cons(wrd_cdr, cons(in(1, 0), nil)), nil)),
-             nil));
+  if (w == wrd_cadr) {  /* expand cadr */
+    long sexp = in(1, 0);
+    sexp = cons(wrd_cdr, cons(sexp, nil));
+    return cons(wrd_car, cons(sexp, nil));
+  }
+  if (w == wrd_caddr) { /* expand caddr */
+    long sexp = in(1, 0);
+    sexp = cons(wrd_cdr, cons(sexp, nil));
+    sexp = cons(wrd_cdr, cons(sexp, nil));
+    return cons(wrd_car, cons(sexp, nil));
+  }
   if (w == wrd_utm) {
     long sexp = in(1, 0);
-    sexp = cons(
-        wrd_try,
-        cons(wrd_no_time_limit,
-             cons(cons(wrd_quote,
-                       cons(cons(wrd_eval, cons(cons(wrd_read_exp, nil), nil)),
-                            nil)),
-                  cons(sexp, nil))));
+    sexp = cons(sexp, nil);
+    sexp = cons(cons(wrd_quote, cons(cons(wrd_eval, cons(cons(wrd_read_exp, nil), nil)), nil)), sexp);
+    sexp = cons(wrd_try, cons(wrd_no_time_limit, sexp));
     sexp = cons(wrd_cdr, cons(sexp, nil));
     sexp = cons(wrd_car, cons(sexp, nil));
     return sexp;
@@ -846,15 +845,13 @@ long sub1(long x) /* subtract 1 from decimal number */
   return cons('9', sub1(cdr[x]));
 }
 
-long nmb(
-    long x) /* pick-up decimal number from atom & convert non-number to zero */
+long nmb(long x) /* pick-up decimal number from atom & convert non-number to zero */
 {
   if (numb[x]) return pname[x];
   return nil;
 }
 
-long remove_leading_zeros(
-    long x) /* from reversed list of digits of decimal number */
+long remove_leading_zeros(long x) /* from reversed list of digits of decimal number */
 {
   long rest, digit;
   if (x == nil) return nil;
@@ -918,9 +915,7 @@ long multiplication(long x, long y) /* goes faster if x is small */
     long digit = car[x];
     while (digit-- > '0') sum = addition(sum, y, 0);
     x = cdr[x];
-    y = cons(
-        '0',
-        y); /* these are where bad decimal numbers are generated if y is zero */
+    y = cons('0', y); /* these are where bad decimal numbers are generated if y is zero */
   }
   return sum;
 }
@@ -928,8 +923,7 @@ long multiplication(long x, long y) /* goes faster if x is small */
 long exponentiation(long base, long exponent) {
   long product = cons('1', nil);
   while (exponent != nil) {
-    product = multiplication(
-        base, product); /* multiply faster if smaller comes first */
+    product = multiplication(base, product); /* multiply faster if smaller comes first */
     exponent = sub1(exponent);
   }
   return product;

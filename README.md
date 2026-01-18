@@ -1,5 +1,5 @@
-AIT Lisp interpreter in C
-=========================
+# AIT Lisp interpreter in C
+
 Based on Lisp created by Gregory Chaitin to study Algorithmic Information Theory.
 
 Programs are from:
@@ -12,13 +12,11 @@ Lisp interpreters are from:
 * https://www.cs.auckland.ac.nz/~chaitin/unknowable/lisp.java
 * https://www.cs.auckland.ac.nz/~chaitin/unknowable/Sexp.java
 
-Chaitin Lisp: Detailed Language Reference
-========================================
+# Chaitin Lisp: Detailed Language Reference
 
 This document provides a formal specification of the Chaitin Lisp dialect, synthesizing its syntax, evaluation semantics, and primitive operations.
 
-1. Data Types and Constants
----------------------------
+## 1. Data Types and Constants
 
 ### 1.1 Fundamental Types
 - **Symbols (Atoms)**: Named identifiers. 
@@ -35,8 +33,7 @@ This document provides a formal specification of the Chaitin Lisp dialect, synth
 - `out-of-data`: Signaled/Returned when `read-bit` or `read-exp` exhausts the input tape.
 - `success` / `failure`: Symbols used to tag the result of a `try` execution.
 
-2. The Reader (M-Expressions)
------------------------------
+## 2. The Reader (M-Expressions)
 
 The reader transforms input text into S-expressions. It supports a shorthand notation called "M-expressions."
 
@@ -56,8 +53,7 @@ If the reader encounters a symbol associated with a primitive, it consumes the r
 ### 2.3 Comments
 Tokens enclosed in square brackets `[...]` are ignored. Comments may be nested.
 
-3. Special Forms
-----------------
+## 3. Special Forms
 
 - **`define <sym> <exp>`**: Defines a global variable.
 - **`define (<sym> <p1> <p2> ...) <exp>`**: Defines a global function.
@@ -66,8 +62,7 @@ Tokens enclosed in square brackets `[...]` are ignored. Comments may be nested.
 - **`if <cond> <true-branch> <false-branch>`**: Conditional execution. If `<cond>` is non-nil, evaluates the second argument; otherwise, evaluates the third.
 - **`eval <exp>`**: Evaluates `<exp>` in a "clean" environment where all symbols (except `nil`) initially evaluate to themselves.
 
-4. Evaluation Semantics
------------------------
+## 4. Evaluation Semantics
 
 Evaluation is performed by the `eval` function, which conceptually takes an expression and an environment.
 
@@ -83,8 +78,7 @@ Evaluation is performed by the `eval` function, which conceptually takes an expr
 4. If the operator is a `lambda`, parameters are bound in a new scope and the body is evaluated.
 5. If the operator is a **Primitive**, the internal logic is executed.
 
-5. Primitives
--------------
+## 5. Primitives
 
 ### 5.1 List Manipulation
 - `(car x)` / `(cdr x)`: Returns the head or tail of a pair. If `x` is an atom or number, returns `x`.
@@ -110,8 +104,7 @@ Operations use arbitrary-precision logic. There are no negative numbers.
 - `(display x)`: Prints `x` to stdout and returns `x`.
 - `(debug x)`: Prints `x` with a "debug" label and returns `x`.
 
-6. The Try Mechanism
---------------------
+## 6. The Try Mechanism
 
 The `try` function provides a sandboxed environment with resource limits.
 **Syntax**: `(try limit expression tape)`

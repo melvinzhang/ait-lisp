@@ -1505,4 +1505,4 @@ value       (1 1 0)
 End of LISP Run
 
 Calls to eval = 15860
-Calls to cons = 135278
+Calls to cons = 100879

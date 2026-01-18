@@ -95,4 +95,4 @@ value       elegant-expression
 End of LISP Run
 
 Calls to eval = 134
-Calls to cons = 6480
+Calls to cons = 5822

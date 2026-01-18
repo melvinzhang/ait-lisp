@@ -686,4 +686,4 @@ value       (failure out-of-data () failure out-of-data () fai
 End of LISP Run
 
 Calls to eval = 41477
-Calls to cons = 239551
+Calls to cons = 227283

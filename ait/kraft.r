@@ -308,4 +308,4 @@ value       (((0 0 0 0 0) e) ((0 0 1) c) ((0 0 0 1) d) ((1) a)
 End of LISP Run
 
 Calls to eval = 5301
-Calls to cons = 19245
+Calls to cons = 18751

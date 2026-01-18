@@ -872,4 +872,4 @@ value       (success a ())
 End of LISP Run
 
 Calls to eval = 4407
-Calls to cons = 100799
+Calls to cons = 30778

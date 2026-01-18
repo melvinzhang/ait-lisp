@@ -104,4 +104,4 @@ value       failure
 End of LISP Run
 
 Calls to eval = 181
-Calls to cons = 8308
+Calls to cons = 4044

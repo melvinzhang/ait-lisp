@@ -198,7 +198,10 @@ func (m *Machine) ToBigInt(x int) *big.Int {
 	if n, ok := m.Nodes[x].(*NumberNode); ok {
 		return new(big.Int).Set(n.Value)
 	}
-	// Fallback for digit-lists (e.g. from parser or legacy lists)
+	return big.NewInt(0)
+}
+
+func (m *Machine) ParseDecimal(x int) *big.Int {
 	res := big.NewInt(0)
 	p := x
 	multiplier := big.NewInt(1)
@@ -490,7 +493,7 @@ func (m *Machine) InWord2() int {
 	word = m.Car(m.InWordBuffer)
 	m.InWordBuffer = m.Cdr(m.InWordBuffer)
 	if m.OnlyDigits(word) {
-		word = m.MkNum(m.ToBigInt(word))
+		word = m.MkNum(m.ParseDecimal(word))
 	} else {
 		word = m.LookupWord(word)
 	}
@@ -1156,7 +1159,7 @@ func (m *Machine) ReadWord() int {
 	word := m.Car(m.Buffer2)
 	m.Buffer2 = m.Cdr(m.Buffer2)
 	if m.OnlyDigits(word) {
-		word = m.MkNum(m.ToBigInt(word))
+		word = m.MkNum(m.ParseDecimal(word))
 	} else {
 		word = m.LookupWord(word)
 	}

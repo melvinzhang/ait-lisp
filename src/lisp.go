@@ -310,23 +310,11 @@ func (m *Machine) PrimCode(x int) int {
 	return PrimNone
 }
 
-func (m *Machine) SetPrimCode(x, y int) {
-	if n, ok := m.Nodes[x].(*AtomNode); ok {
-		n.PrimCode = y
-	}
-}
-
 func (m *Machine) PrimArgs(x int) int {
 	if n, ok := m.Nodes[x].(*AtomNode); ok {
 		return n.PrimArgs
 	}
 	return 0
-}
-
-func (m *Machine) SetPrimArgs(x, y int) {
-	if n, ok := m.Nodes[x].(*AtomNode); ok {
-		n.PrimArgs = y
-	}
 }
 
 func (m *Machine) IsAtom(x int) bool {
@@ -721,7 +709,7 @@ func (m *Machine) Eval(e, d int) int {
 		}
 		return m.SymFalse
 	case PrimPlus:
-		return m.MkNum(m.Addition(m.ToNum(x), m.ToNum(y), 0))
+		return m.MkNum(m.Addition(m.ToNum(x), m.ToNum(y)))
 	case PrimTimes:
 		return m.MkNum(m.Multiplication(m.ToNum(x), m.ToNum(y)))
 	case PrimPow:
@@ -730,7 +718,7 @@ func (m *Machine) Eval(e, d int) int {
 		if m.Compare(m.ToNum(x), m.ToNum(y)) != '>' {
 			return m.MkNum(big.NewInt(0))
 		}
-		return m.MkNum(m.Subtraction(m.ToNum(x), m.ToNum(y), 0))
+		return m.MkNum(m.Subtraction(m.ToNum(x), m.ToNum(y)))
 	case Prim2To10:
 		return m.MkNum(m.Base2To10(x))
 	case Prim10To2:
@@ -933,16 +921,12 @@ func (m *Machine) ToNum(x int) int {
 	return Nil
 }
 
-func (m *Machine) Addition(x, y, carry int) *big.Int {
-	res := new(big.Int).Add(m.ToBigInt(x), m.ToBigInt(y))
-	res.Add(res, big.NewInt(int64(carry)))
-	return res
+func (m *Machine) Addition(x, y int) *big.Int {
+	return new(big.Int).Add(m.ToBigInt(x), m.ToBigInt(y))
 }
 
-func (m *Machine) Subtraction(x, y, borrow int) *big.Int {
-	res := new(big.Int).Sub(m.ToBigInt(x), m.ToBigInt(y))
-	res.Sub(res, big.NewInt(int64(borrow)))
-	return res
+func (m *Machine) Subtraction(x, y int) *big.Int {
+	return new(big.Int).Sub(m.ToBigInt(x), m.ToBigInt(y))
 }
 
 func (m *Machine) Multiplication(x, y int) *big.Int {
@@ -969,10 +953,6 @@ func (m *Machine) Base2To10(x int) *big.Int {
 		p = m.Cdr(p)
 	}
 	return res
-}
-
-func (m *Machine) Halve(nx *big.Int) *big.Int {
-	return new(big.Int).Rsh(nx, 1)
 }
 
 func (m *Machine) Base10To2(x int) int {

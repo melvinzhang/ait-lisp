@@ -41,21 +41,32 @@ const (
 	PrimReadExp
 )
 
-// --- Structs ---
+// --- Machine Definition ---
 
-type Node struct {
-	Car, Cdr int
-	IsAtom   bool
-	IsNumb   bool
-	Value    int
-	Name     int
-	PrimCode int
-	PrimArgs int
+type SExp interface {
+	isSExp()
 }
 
-type Machine struct {
-	Nodes []Node
+type ConsNode struct {
+	Car, Cdr int
+}
 
+func (n *ConsNode) isSExp() {}
+
+type NumberNode struct {
+	Value int
+}
+
+func (n *NumberNode) isSExp() {}
+
+type AtomNode struct {
+	Name, Value, PrimCode, PrimArgs int
+}
+
+func (n *AtomNode) isSExp() {}
+
+type Machine struct {
+	Nodes      []SExp
 	ObjectList int
 
 	SymNil, SymTrue, SymFalse, SymDefine, SymLet, SymLambda, SymQuote, SymIf int
@@ -81,7 +92,7 @@ type Machine struct {
 
 func NewMachine(r io.Reader, w io.Writer) *Machine {
 	return &Machine{
-		Nodes:        make([]Node, Size),
+		Nodes:        make([]SExp, Size),
 		NextFree:     0,
 		Col:          0,
 		TimeEval:     0,
@@ -150,29 +161,22 @@ func (m *Machine) Init() {
 }
 
 func (m *Machine) MkAtom(number int, name string, args int) int {
-	a := m.Cons(Nil, Nil)
-	m.SetCar(a, a)
-	m.SetCdr(a, a)
-	m.SetIsAtom(a, true)
-	m.SetIsNumber(a, false)
-	m.SetName(a, m.MkString(name))
-	m.SetPrimCode(a, number)
-	m.SetPrimArgs(a, args)
+	a := m.NextFree
+	m.NextFree++
+	m.Nodes[a] = &AtomNode{
+		Name:     m.MkString(name),
+		PrimCode: number,
+		PrimArgs: args,
+	}
 	m.SetValue(a, m.Cons(a, Nil))
 	m.ObjectList = m.Cons(a, m.ObjectList)
 	return a
 }
 
 func (m *Machine) MkNum(value int) int {
-	a := m.Cons(Nil, Nil)
-	m.SetCar(a, a)
-	m.SetCdr(a, a)
-	m.SetIsAtom(a, true)
-	m.SetIsNumber(a, true)
-	m.SetName(a, value)
-	m.SetPrimCode(a, PrimNone)
-	m.SetPrimArgs(a, 0)
-	m.SetValue(a, 0)
+	a := m.NextFree
+	m.NextFree++
+	m.Nodes[a] = &NumberNode{Value: value}
 	return a
 }
 
@@ -194,7 +198,7 @@ func (m *Machine) Cons(x, y int) int {
 	}
 	z := m.NextFree
 	m.NextFree++
-	m.Nodes[z] = Node{
+	m.Nodes[z] = &ConsNode{
 		Car: x,
 		Cdr: y,
 	}
@@ -203,22 +207,109 @@ func (m *Machine) Cons(x, y int) int {
 
 // --- Accessors ---
 
-func (m *Machine) Car(x int) int             { return m.Nodes[x].Car }
-func (m *Machine) Cdr(x int) int             { return m.Nodes[x].Cdr }
-func (m *Machine) SetCar(x, y int)           { m.Nodes[x].Car = y }
-func (m *Machine) SetCdr(x, y int)           { m.Nodes[x].Cdr = y }
-func (m *Machine) IsAtom(x int) bool         { return m.Nodes[x].IsAtom }
-func (m *Machine) SetIsAtom(x int, b bool)   { m.Nodes[x].IsAtom = b }
-func (m *Machine) IsNumber(x int) bool       { return m.Nodes[x].IsNumb }
-func (m *Machine) SetIsNumber(x int, b bool) { m.Nodes[x].IsNumb = b }
-func (m *Machine) Value(x int) int           { return m.Nodes[x].Value }
-func (m *Machine) SetValue(x, y int)         { m.Nodes[x].Value = y }
-func (m *Machine) Name(x int) int            { return m.Nodes[x].Name }
-func (m *Machine) SetName(x, y int)          { m.Nodes[x].Name = y }
-func (m *Machine) PrimCode(x int) int        { return m.Nodes[x].PrimCode }
-func (m *Machine) SetPrimCode(x, y int)      { m.Nodes[x].PrimCode = y }
-func (m *Machine) PrimArgs(x int) int        { return m.Nodes[x].PrimArgs }
-func (m *Machine) SetPrimArgs(x, y int)      { m.Nodes[x].PrimArgs = y }
+func (m *Machine) Car(x int) int {
+	switch n := m.Nodes[x].(type) {
+	case *ConsNode:
+		return n.Car
+	default:
+		return x
+	}
+}
+
+func (m *Machine) Cdr(x int) int {
+	switch n := m.Nodes[x].(type) {
+	case *ConsNode:
+		return n.Cdr
+	default:
+		return x
+	}
+}
+
+func (m *Machine) SetCar(x, y int) {
+	if n, ok := m.Nodes[x].(*ConsNode); ok {
+		n.Car = y
+	}
+}
+
+func (m *Machine) SetCdr(x, y int) {
+	if n, ok := m.Nodes[x].(*ConsNode); ok {
+		n.Cdr = y
+	}
+}
+
+func (m *Machine) Value(x int) int {
+	if n, ok := m.Nodes[x].(*AtomNode); ok {
+		return n.Value
+	}
+	return Nil
+}
+
+func (m *Machine) SetValue(x, y int) {
+	if n, ok := m.Nodes[x].(*AtomNode); ok {
+		n.Value = y
+	}
+}
+
+func (m *Machine) Name(x int) int {
+	switch n := m.Nodes[x].(type) {
+	case *NumberNode:
+		return n.Value
+	case *AtomNode:
+		return n.Name
+	default:
+		return Nil
+	}
+}
+
+func (m *Machine) SetName(x, y int) {
+	if n, ok := m.Nodes[x].(*AtomNode); ok {
+		n.Name = y
+	}
+}
+
+func (m *Machine) PrimCode(x int) int {
+	if n, ok := m.Nodes[x].(*AtomNode); ok {
+		return n.PrimCode
+	}
+	return PrimNone
+}
+
+func (m *Machine) SetPrimCode(x, y int) {
+	if n, ok := m.Nodes[x].(*AtomNode); ok {
+		n.PrimCode = y
+	}
+}
+
+func (m *Machine) PrimArgs(x int) int {
+	if n, ok := m.Nodes[x].(*AtomNode); ok {
+		return n.PrimArgs
+	}
+	return 0
+}
+
+func (m *Machine) SetPrimArgs(x, y int) {
+	if n, ok := m.Nodes[x].(*AtomNode); ok {
+		n.PrimArgs = y
+	}
+}
+
+func (m *Machine) IsAtom(x int) bool {
+	switch m.Nodes[x].(type) {
+	case *ConsNode:
+		return false
+	default:
+		return true // Atoms and Numbers are both "atoms" in S-exp parlance
+	}
+}
+
+func (m *Machine) IsNumber(x int) bool {
+	switch m.Nodes[x].(type) {
+	case *NumberNode:
+		return true
+	default:
+		return false
+	}
+}
 
 // --- Output ---
 

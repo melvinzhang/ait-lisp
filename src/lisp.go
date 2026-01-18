@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 )
 
@@ -54,7 +55,7 @@ type ConsNode struct {
 func (n *ConsNode) isSExp() {}
 
 type NumberNode struct {
-	Value int
+	Value *big.Int
 }
 
 func (n *NumberNode) isSExp() {}
@@ -156,11 +157,15 @@ func (m *Machine) Init() {
 	m.LeftParen = m.MkAtom(PrimNone, "(", 0)
 	m.RightParen = m.MkAtom(PrimNone, ")", 0)
 	m.DoubleQuote = m.MkAtom(PrimNone, "\"", 0)
-	m.SymZero = m.MkNum(Nil)
-	m.SymOne = m.MkNum(m.Cons('1', Nil))
+	m.SymZero = m.MkNum(big.NewInt(0))
+	m.SymOne = m.MkNum(big.NewInt(1))
 }
 
 func (m *Machine) MkAtom(number int, name string, args int) int {
+	if m.NextFree >= Size {
+		fmt.Fprintf(m.Writer, "Storage overflow!\n")
+		os.Exit(0)
+	}
 	a := m.NextFree
 	m.NextFree++
 	m.Nodes[a] = &AtomNode{
@@ -173,11 +178,39 @@ func (m *Machine) MkAtom(number int, name string, args int) int {
 	return a
 }
 
-func (m *Machine) MkNum(value int) int {
+func (m *Machine) MkNum(value *big.Int) int {
+	if m.NextFree >= Size {
+		fmt.Fprintf(m.Writer, "Storage overflow!\n")
+		os.Exit(0)
+	}
 	a := m.NextFree
 	m.NextFree++
-	m.Nodes[a] = &NumberNode{Value: value}
+	m.Nodes[a] = &NumberNode{
+		Value: new(big.Int).Set(value),
+	}
 	return a
+}
+
+func (m *Machine) ToBigInt(x int) *big.Int {
+	if x == Nil {
+		return big.NewInt(0)
+	}
+	if n, ok := m.Nodes[x].(*NumberNode); ok {
+		return new(big.Int).Set(n.Value)
+	}
+	// Fallback for digit-lists (e.g. from parser or legacy lists)
+	res := big.NewInt(0)
+	p := x
+	multiplier := big.NewInt(1)
+	base := big.NewInt(10)
+	for !m.IsAtom(p) {
+		digit := int64(m.Car(p) - '0')
+		term := new(big.Int).Mul(big.NewInt(digit), multiplier)
+		res.Add(res, term)
+		multiplier.Mul(multiplier, base)
+		p = m.Cdr(p)
+	}
+	return res
 }
 
 func (m *Machine) MkString(p string) int {
@@ -253,7 +286,7 @@ func (m *Machine) SetValue(x, y int) {
 func (m *Machine) Name(x int) int {
 	switch n := m.Nodes[x].(type) {
 	case *NumberNode:
-		return n.Value
+		return Nil
 	case *AtomNode:
 		return n.Name
 	default:
@@ -322,8 +355,16 @@ func (m *Machine) Print(label string, x int) int {
 }
 
 func (m *Machine) PrintList(x int) {
-	if m.IsNumber(x) && m.Name(x) == Nil {
-		m.PrintChar('0')
+	if m.IsNumber(x) {
+		val := m.ToBigInt(x)
+		if val.Sign() == 0 {
+			m.PrintChar('0')
+			return
+		}
+		s := val.String()
+		for i := 0; i < len(s); i++ {
+			m.PrintChar(int(s[i]))
+		}
 		return
 	}
 	if m.IsAtom(x) {
@@ -449,7 +490,7 @@ func (m *Machine) InWord2() int {
 	word = m.Car(m.InWordBuffer)
 	m.InWordBuffer = m.Cdr(m.InWordBuffer)
 	if m.OnlyDigits(word) {
-		word = m.MkNum(m.RemoveLeadingZeros(word))
+		word = m.MkNum(m.ToBigInt(word))
 	} else {
 		word = m.LookupWord(word)
 	}
@@ -653,7 +694,7 @@ func (m *Machine) Eval(e, d int) int {
 		}
 		return m.AppendList(pX, pY)
 	case PrimLength:
-		return m.MkNum(m.Length(x))
+		return m.Length(x)
 	case PrimLt:
 		if m.Compare(m.ToNum(x), m.ToNum(y)) == '<' {
 			return m.SymTrue
@@ -665,12 +706,14 @@ func (m *Machine) Eval(e, d int) int {
 		}
 		return m.SymFalse
 	case PrimLeq:
-		if m.Compare(m.ToNum(x), m.ToNum(y)) != '>' {
+		cmp := m.Compare(m.ToNum(x), m.ToNum(y))
+		if cmp == '<' || cmp == '=' {
 			return m.SymTrue
 		}
 		return m.SymFalse
 	case PrimGeq:
-		if m.Compare(m.ToNum(x), m.ToNum(y)) != '<' {
+		cmp := m.Compare(m.ToNum(x), m.ToNum(y))
+		if cmp == '>' || cmp == '=' {
 			return m.SymTrue
 		}
 		return m.SymFalse
@@ -682,9 +725,9 @@ func (m *Machine) Eval(e, d int) int {
 		return m.MkNum(m.Exponentiation(m.ToNum(x), m.ToNum(y)))
 	case PrimMinus:
 		if m.Compare(m.ToNum(x), m.ToNum(y)) != '>' {
-			return m.MkNum(Nil)
+			return m.MkNum(big.NewInt(0))
 		}
-		return m.MkNum(m.RemoveLeadingZeros(m.Subtraction(m.ToNum(x), m.ToNum(y), 0)))
+		return m.MkNum(m.Subtraction(m.ToNum(x), m.ToNum(y), 0))
 	case Prim2To10:
 		return m.MkNum(m.Base2To10(x))
 	case Prim10To2:
@@ -708,10 +751,10 @@ func (m *Machine) Eval(e, d int) int {
 	}
 
 	if d != m.SymNoTimeLimit {
-		if d == Nil {
+		if m.ToBigInt(d).Sign() == 0 {
 			return -m.SymOutOfTime
 		}
-		d = m.Sub1(d)
+		d = m.MkNum(m.Sub1(d))
 	}
 
 	if f == m.SymEval {
@@ -835,7 +878,7 @@ func (m *Machine) Eq(x, y int) bool {
 		return true
 	}
 	if m.IsNumber(x) && m.IsNumber(y) {
-		return m.EqWord(m.Name(x), m.Name(y))
+		return m.Compare(x, y) == '='
 	}
 	if m.IsNumber(x) || m.IsNumber(y) {
 		return false
@@ -850,209 +893,136 @@ func (m *Machine) Eq(x, y int) bool {
 }
 
 func (m *Machine) Length(x int) int {
-	if m.IsAtom(x) {
-		return Nil
-	}
-	return m.Add1(m.Length(m.Cdr(x)))
+	return m.MkNum(m.BigLength(x))
 }
 
 func (m *Machine) Compare(x, y int) int {
-	if x == Nil && y == Nil {
-		return '='
-	}
-	if x == Nil && y != Nil {
+	nx := m.ToBigInt(x)
+	ny := m.ToBigInt(y)
+	cmp := nx.Cmp(ny)
+	if cmp < 0 {
 		return '<'
-	}
-	if x != Nil && y == Nil {
-		return '>'
-	}
-	already := m.Compare(m.Cdr(x), m.Cdr(y))
-	if already != '=' {
-		return already
-	}
-	d1, d2 := m.Car(x), m.Car(y)
-	if d1 < d2 {
-		return '<'
-	}
-	if d1 > d2 {
+	} else if cmp > 0 {
 		return '>'
 	}
 	return '='
 }
 
-func (m *Machine) Add1(x int) int {
-	if x == Nil {
-		return m.Cons('1', Nil)
-	}
-	digit := m.Car(x)
-	if digit != '9' {
-		return m.Cons(digit+1, m.Cdr(x))
-	}
-	return m.Cons('0', m.Add1(m.Cdr(x)))
+func (m *Machine) Add1(x int) *big.Int {
+	nx := m.ToBigInt(x)
+	nx.Add(nx, big.NewInt(1))
+	return nx
 }
 
-func (m *Machine) Sub1(x int) int {
-	if x == Nil {
-		return x
+func (m *Machine) Sub1(x int) *big.Int {
+	nx := m.ToBigInt(x)
+	if nx.Sign() <= 0 {
+		return big.NewInt(0)
 	}
-	digit := m.Car(x)
-	if digit == '1' && m.Cdr(x) == Nil {
-		return Nil
-	}
-	if digit != '0' {
-		return m.Cons(digit-1, m.Cdr(x))
-	}
-	return m.Cons('9', m.Sub1(m.Cdr(x)))
+	nx.Sub(nx, big.NewInt(1))
+	return nx
 }
 
 func (m *Machine) ToNum(x int) int {
 	if m.IsNumber(x) {
-		return m.Name(x)
+		return x
 	}
 	return Nil
 }
 
-func (m *Machine) RemoveLeadingZeros(x int) int {
-	if x == Nil {
-		return Nil
-	}
-	digit := m.Car(x)
-	rest := m.RemoveLeadingZeros(m.Cdr(x))
-	if rest == Nil && digit == '0' {
-		return Nil
-	}
-	return m.Cons(digit, rest)
+func (m *Machine) Addition(x, y, carry int) *big.Int {
+	res := new(big.Int).Add(m.ToBigInt(x), m.ToBigInt(y))
+	res.Add(res, big.NewInt(int64(carry)))
+	return res
 }
 
-func (m *Machine) Addition(x, y, carry int) int {
-	if x == Nil && carry == 0 {
-		return y
-	}
-	if y == Nil && carry == 0 {
-		return x
-	}
-	d1, r1 := int('0'), Nil
-	if x != Nil {
-		d1, r1 = m.Car(x), m.Cdr(x)
-	}
-	d2, r2 := int('0'), Nil
-	if y != Nil {
-		d2, r2 = m.Car(y), m.Cdr(y)
-	}
-	sum := d1 + d2 + carry - int('0')
-	if sum <= int('9') {
-		return m.Cons(sum, m.Addition(r1, r2, 0))
-	}
-	return m.Cons(sum-10, m.Addition(r1, r2, 1))
+func (m *Machine) Subtraction(x, y, borrow int) *big.Int {
+	res := new(big.Int).Sub(m.ToBigInt(x), m.ToBigInt(y))
+	res.Sub(res, big.NewInt(int64(borrow)))
+	return res
 }
 
-func (m *Machine) Subtraction(x, y, borrow int) int {
-	if y == Nil && borrow == 0 {
-		return x
-	}
-	d1, r1 := int('0'), Nil
-	if x != Nil {
-		d1, r1 = m.Car(x), m.Cdr(x)
-	}
-	d2, r2 := int('0'), Nil
-	if y != Nil {
-		d2, r2 = m.Car(y), m.Cdr(y)
-	}
-	diff := d1 - d2 - borrow + int('0')
-	if diff >= int('0') {
-		return m.Cons(diff, m.Subtraction(r1, r2, 0))
-	}
-	return m.Cons(diff+10, m.Subtraction(r1, r2, 1))
+func (m *Machine) Multiplication(x, y int) *big.Int {
+	return new(big.Int).Mul(m.ToBigInt(x), m.ToBigInt(y))
 }
 
-func (m *Machine) Multiplication(x, y int) int {
-	sum := Nil
-	if y == Nil {
-		return Nil
-	}
-	for x != Nil {
-		digit := m.Car(x)
-		for digit > '0' {
-			sum = m.Addition(sum, y, 0)
-			digit--
-		}
-		y = m.Cons('0', y)
-		x = m.Cdr(x)
-	}
-	return sum
-}
-
-func (m *Machine) Exponentiation(base, exp int) int {
-	prod := m.Cons('1', Nil)
-	for exp != Nil {
-		prod = m.Multiplication(base, prod)
-		exp = m.Sub1(exp)
-	}
-	return prod
+func (m *Machine) Exponentiation(base, exp int) *big.Int {
+	return new(big.Int).Exp(m.ToBigInt(base), m.ToBigInt(exp), nil)
 }
 
 // --- Tape & Main ---
 
-func (m *Machine) Base2To10(x int) int {
-	res := Nil
-	for !m.IsAtom(x) {
-		bit := m.Car(x)
-		v := 1
-		if m.IsNumber(bit) && m.Name(bit) == Nil {
+func (m *Machine) Base2To10(x int) *big.Int {
+	res := big.NewInt(0)
+	p := x
+	for !m.IsAtom(p) {
+		bit := m.Car(p)
+		v := int64(1)
+		if m.IsNumber(bit) && m.ToBigInt(bit).Sign() == 0 {
 			v = 0
 		}
-		res = m.Addition(res, res, v)
-		x = m.Cdr(x)
+		res.Mul(res, big.NewInt(2))
+		res.Add(res, big.NewInt(v))
+		p = m.Cdr(p)
 	}
 	return res
 }
 
-func (m *Machine) Halve(x int) int {
-	if x == Nil {
-		return x
-	}
-	digit := m.Car(x) - '0'
-	rest := m.Halve(m.Cdr(x))
-	next := 0
-	if m.Cdr(x) != Nil {
-		next = m.Car(m.Cdr(x)) - '0'
-	}
-	val := '0' + (digit / 2) + (5 * (next % 2))
-	if val != '0' || rest != Nil {
-		return m.Cons(val, rest)
-	}
-	return Nil
+func (m *Machine) Halve(nx *big.Int) *big.Int {
+	return new(big.Int).Rsh(nx, 1)
 }
 
 func (m *Machine) Base10To2(x int) int {
+	nx := m.ToBigInt(x)
+	if nx.Sign() == 0 {
+		return Nil
+	}
 	bits := Nil
-	for x != Nil {
+	temp := new(big.Int).Set(nx)
+	for temp.Sign() > 0 {
 		bit := m.SymZero
-		if (m.Car(x)-'0')%2 != 0 {
+		if temp.Bit(0) == 1 {
 			bit = m.SymOne
 		}
 		bits = m.Cons(bit, bits)
-		x = m.Halve(x)
+		temp.Rsh(temp, 1)
 	}
 	return bits
 }
 
-func (m *Machine) Size(x int) int {
-	if m.IsNumber(x) && m.Name(x) == Nil {
-		return m.Add1(Nil)
+func (m *Machine) Size(x int) *big.Int {
+	if m.IsNumber(x) {
+		val := m.ToBigInt(x)
+		s := val.String()
+		return big.NewInt(int64(len(s)))
 	}
 	if m.IsAtom(x) {
-		return m.Length(m.Name(x))
+		return m.BigLength(m.Name(x))
 	}
-	sum := Nil
-	for !m.IsAtom(x) {
-		sum = m.Addition(sum, m.Size(m.Car(x)), 0)
-		x = m.Cdr(x)
-		if !m.IsAtom(x) {
-			sum = m.Add1(sum)
+	sum := big.NewInt(0)
+	p := x
+	for !m.IsAtom(p) {
+		sum.Add(sum, m.Size(m.Car(p)))
+		p = m.Cdr(p)
+		if !m.IsAtom(p) {
+			sum.Add(sum, big.NewInt(1))
 		}
 	}
-	return m.Add1(m.Add1(sum))
+	sum.Add(sum, big.NewInt(2))
+	return sum
+}
+
+func (m *Machine) BigLength(x int) *big.Int {
+	if m.IsAtom(x) {
+		return big.NewInt(0)
+	}
+	res := big.NewInt(0)
+	p := x
+	for !m.IsAtom(p) {
+		res.Add(res, big.NewInt(1))
+		p = m.Cdr(p)
+	}
+	return res
 }
 
 func (m *Machine) ReadBit() int {
@@ -1062,7 +1032,7 @@ func (m *Machine) ReadBit() int {
 	}
 	bit := m.Car(t)
 	m.SetCar(m.Tapes, m.Cdr(t))
-	if m.IsNumber(bit) && m.Name(bit) == Nil {
+	if m.IsNumber(bit) && m.ToBigInt(bit).Sign() == 0 {
 		return m.SymZero
 	}
 	return m.SymOne
@@ -1085,8 +1055,16 @@ func (m *Machine) WriteChar(x int) {
 }
 
 func (m *Machine) WriteLisp(x int) {
-	if m.IsNumber(x) && m.Name(x) == Nil {
-		m.WriteChar('0')
+	if m.IsNumber(x) {
+		val := m.ToBigInt(x)
+		if val.Sign() == 0 {
+			m.WriteChar('0')
+			return
+		}
+		s := val.String()
+		for i := 0; i < len(s); i++ {
+			m.WriteChar(int(s[i]))
+		}
 		return
 	}
 	if m.IsAtom(x) {
@@ -1178,7 +1156,7 @@ func (m *Machine) ReadWord() int {
 	word := m.Car(m.Buffer2)
 	m.Buffer2 = m.Cdr(m.Buffer2)
 	if m.OnlyDigits(word) {
-		word = m.MkNum(m.RemoveLeadingZeros(word))
+		word = m.MkNum(m.ToBigInt(word))
 	} else {
 		word = m.LookupWord(word)
 	}

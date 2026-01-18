@@ -1,6 +1,9 @@
 SHELL = /bin/bash
 
-lisp: src/lisp.c
+lisp: src/lisp.go
+	go build -o $@ $^
+
+lispc: src/lisp.c
 	${CC} -pedantic \
 	-Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual \
 	-Wstrict-prototypes -Wmissing-prototypes -Werror \

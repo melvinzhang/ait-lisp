@@ -1,4 +1,4 @@
-# AIT Lisp interpreter in C
+# AIT Lisp interpreter
 
 Based on Lisp created by Gregory Chaitin to study Algorithmic Information Theory.
 
@@ -12,7 +12,7 @@ Lisp interpreters are from:
 * https://www.cs.auckland.ac.nz/~chaitin/unknowable/lisp.java
 * https://www.cs.auckland.ac.nz/~chaitin/unknowable/Sexp.java
 
-# Chaitin Lisp: Detailed Language Reference
+# AIT Lisp Language Reference
 
 This document provides a formal specification of the Chaitin Lisp dialect, synthesizing its syntax, evaluation semantics, and primitive operations.
 

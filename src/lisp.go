@@ -468,7 +468,17 @@ func (m *Machine) GetChar() int {
 
 // --- Parser ---
 
-func (m *Machine) tokenizeLine(getChar func() int, isSeparator func(int) bool) int {
+func (m *Machine) isSeparator(character int, mexp bool) bool {
+	if character == ' ' || character == '\n' || character == '(' || character == ')' {
+		return true
+	}
+	if mexp {
+		return character == '[' || character == ']' || character == '\'' || character == '"'
+	}
+	return false
+}
+
+func (m *Machine) tokenizeLine(getChar func() int, mexp bool) int {
 	line := m.List(Nil)
 	endOfLine := line
 	for {
@@ -492,7 +502,7 @@ func (m *Machine) tokenizeLine(getChar func() int, isSeparator func(int) bool) i
 	for line != Nil {
 		character := m.Car(line)
 		line = m.Cdr(line)
-		if isSeparator(character) {
+		if m.isSeparator(character, mexp) {
 			if word != Nil {
 				newNode := m.List(word)
 				m.SetCdr(endOfTokens, newNode)
@@ -526,11 +536,7 @@ func (m *Machine) InWord2() int {
 			character := m.GetChar()
 			fmt.Fprintf(m.Writer, "%c", character)
 			return character
-		}, func(character int) bool {
-			return character == ' ' || character == '\n' || character == '(' ||
-				character == ')' || character == '[' || character == ']' ||
-				character == '\'' || character == '"'
-		})
+		}, true)
 	}
 	word := m.Car(m.InWordBuffer)
 	m.InWordBuffer = m.Cdr(m.InWordBuffer)
@@ -560,11 +566,11 @@ func (m *Machine) InWord() int {
 	}
 }
 
-func (m *Machine) readList(read func(bool) int) int {
+func (m *Machine) readList(wordSource func() int, mexp bool) int {
 	first := m.List(Nil)
 	last := first
 	for {
-		next := read(true)
+		next := m.readFrom(wordSource, mexp, true)
 		if next == m.RightParen || next < 0 {
 			break
 		}
@@ -576,8 +582,12 @@ func (m *Machine) readList(read func(bool) int) int {
 }
 
 func (m *Machine) Read(mexp bool, rparenokay bool) int {
+	return m.readFrom(m.InWord, mexp, rparenokay)
+}
+
+func (m *Machine) readFrom(wordSource func() int, mexp bool, rparenokay bool) int {
 	var w, name, def, body, varLst, i int
-	w = m.InWord()
+	w = wordSource()
 	if w == m.RightParen {
 		if rparenokay {
 			return w
@@ -585,32 +595,32 @@ func (m *Machine) Read(mexp bool, rparenokay bool) int {
 		return Nil
 	}
 	if w == m.LeftParen {
-		return m.readList(func(r bool) int { return m.Read(mexp, r) })
+		return m.readList(wordSource, mexp)
 	}
 	if !mexp {
 		return w
 	}
 	if w == m.DoubleQuote {
-		return m.Read(false, false)
+		return m.readFrom(wordSource, false, false)
 	}
 	if w == m.SymCadr {
-		sexp := m.Read(true, false)
+		sexp := m.readFrom(wordSource, true, false)
 		return m.List(m.SymCar, m.List(m.SymCdr, sexp))
 	}
 	if w == m.SymCaddr {
-		sexp := m.Read(true, false)
+		sexp := m.readFrom(wordSource, true, false)
 		return m.List(m.SymCar, m.List(m.SymCdr, m.List(m.SymCdr, sexp)))
 	}
 	if w == m.SymUtm {
-		sexp := m.Read(true, false)
+		sexp := m.readFrom(wordSource, true, false)
 		inner := m.List(m.SymQuote, m.List(m.SymEval, m.List(m.SymReadExp)))
 		try_ := m.List(m.SymTry, m.SymNoTimeLimit, inner, sexp)
 		return m.List(m.SymCar, m.List(m.SymCdr, try_))
 	}
 	if w == m.SymLet {
-		name = m.Read(true, false)
-		def = m.Read(true, false)
-		body = m.Read(true, false)
+		name = m.readFrom(wordSource, true, false)
+		def = m.readFrom(wordSource, true, false)
+		body = m.readFrom(wordSource, true, false)
 		if !m.IsAtom(name) {
 			varLst = m.Cdr(name)
 			name = m.Car(name)
@@ -626,7 +636,7 @@ func (m *Machine) Read(mexp bool, rparenokay bool) int {
 	last := first
 	i--
 	for i > 0 {
-		newNode := m.List(m.Read(true, false))
+		newNode := m.List(m.readFrom(wordSource, true, false))
 		m.SetCdr(last, newNode)
 		last = newNode
 		i--
@@ -1072,9 +1082,7 @@ func (m *Machine) ReadChar() int {
 }
 
 func (m *Machine) ReadRecord() int {
-	tokens := m.tokenizeLine(m.ReadChar, func(c int) bool {
-		return c == ' ' || c == '\n' || c == '(' || c == ')'
-	})
+	tokens := m.tokenizeLine(m.ReadChar, false)
 	if tokens < 0 {
 		return tokens
 	}
@@ -1092,20 +1100,7 @@ func (m *Machine) ReadWord() int {
 }
 
 func (m *Machine) ReadExpr(rparen bool) int {
-	w := m.ReadWord()
-	if w < 0 {
-		return w
-	}
-	if w == m.RightParen {
-		if rparen {
-			return w
-		}
-		return Nil
-	}
-	if w == m.LeftParen {
-		return m.readList(func(bool) int { return m.ReadExpr(true) })
-	}
-	return w
+	return m.readFrom(m.ReadWord, false, rparen)
 }
 
 func (m *Machine) Run() {

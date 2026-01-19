@@ -412,6 +412,10 @@ func (m *Machine) PrintChar(x int) {
 
 // --- Utils ---
 
+func (m *Machine) binaryOp(x, y int, op func(*big.Int, *big.Int) *big.Int) int {
+	return m.MkNum(op(m.ToBigInt(m.ToNum(x)), m.ToBigInt(m.ToNum(y))))
+}
+
 func (m *Machine) EqWord(x, y int) bool {
 	if x == Nil {
 		return y == Nil
@@ -745,16 +749,16 @@ func (m *Machine) Eval(e, d int) int {
 		}
 		return m.SymFalse
 	case PrimPlus:
-		return m.MkNum(m.Addition(m.ToNum(x), m.ToNum(y)))
+		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Add(a, b) })
 	case PrimTimes:
-		return m.MkNum(m.Multiplication(m.ToNum(x), m.ToNum(y)))
+		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Mul(a, b) })
 	case PrimPow:
-		return m.MkNum(m.Exponentiation(m.ToNum(x), m.ToNum(y)))
+		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Exp(a, b, nil) })
 	case PrimMinus:
 		if m.Compare(m.ToNum(x), m.ToNum(y)) != '>' {
 			return m.MkNum(big.NewInt(0))
 		}
-		return m.MkNum(m.Subtraction(m.ToNum(x), m.ToNum(y)))
+		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Sub(a, b) })
 	case Prim2To10:
 		return m.MkNum(m.Base2To10(x))
 	case Prim10To2:
@@ -955,22 +959,6 @@ func (m *Machine) ToNum(x int) int {
 		return x
 	}
 	return Nil
-}
-
-func (m *Machine) Addition(x, y int) *big.Int {
-	return new(big.Int).Add(m.ToBigInt(x), m.ToBigInt(y))
-}
-
-func (m *Machine) Subtraction(x, y int) *big.Int {
-	return new(big.Int).Sub(m.ToBigInt(x), m.ToBigInt(y))
-}
-
-func (m *Machine) Multiplication(x, y int) *big.Int {
-	return new(big.Int).Mul(m.ToBigInt(x), m.ToBigInt(y))
-}
-
-func (m *Machine) Exponentiation(base, exp int) *big.Int {
-	return new(big.Int).Exp(m.ToBigInt(base), m.ToBigInt(exp), nil)
 }
 
 // --- Tape & Main ---

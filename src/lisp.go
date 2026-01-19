@@ -50,6 +50,8 @@ const (
 
 // --- Machine Definition ---
 
+type PrimitiveFunc func(args int) int
+
 type Node struct {
 	Kind                  int
 	Car, Cdr              int
@@ -67,6 +69,8 @@ type Machine struct {
 	LeftBracket, RightBracket, LeftParen, RightParen, DoubleQuote            int
 	SymZero, SymOne                                                          int
 	SymReadExp, SymUtm                                                       int
+
+	Primitives [PrimReadExp + 1]PrimitiveFunc
 
 	NextFree         int
 	Col              int
@@ -166,6 +170,96 @@ func (m *Machine) Init() {
 	m.SetCar(m.Value(m.SymNil), Nil)
 	m.SymZero = m.MkNum(big.NewInt(0))
 	m.SymOne = m.MkNum(big.NewInt(1))
+	m.setupPrimitives()
+}
+
+func (m *Machine) prim1(f func(int) int) PrimitiveFunc {
+	return func(args int) int { return f(m.Car(args)) }
+}
+
+func (m *Machine) prim2(f func(int, int) int) PrimitiveFunc {
+	return func(args int) int { return f(m.Car(args), m.Car(m.Cdr(args))) }
+}
+
+func (m *Machine) setupPrimitives() {
+	m.Primitives[PrimCar] = m.prim1(m.Car)
+	m.Primitives[PrimCdr] = m.prim1(m.Cdr)
+	m.Primitives[PrimCons] = m.prim2(m.Cons)
+	m.Primitives[PrimAtom] = func(args int) int { return m.boolToSym(m.IsAtom(m.Car(args))) }
+	m.Primitives[PrimEq] = func(args int) int { return m.boolToSym(m.Eq(m.Car(args), m.Car(m.Cdr(args)))) }
+	m.Primitives[PrimDisplay] = func(args int) int {
+		x := m.Car(args)
+		if m.Car(m.DisplayEnabled) != 0 {
+			return m.Print("display", x)
+		}
+		stubIdx := m.Car(m.CapturedDisplays)
+		oldEnd := m.Car(stubIdx)
+		newEnd := m.List(x)
+		m.SetCdr(oldEnd, newEnd)
+		m.SetCar(stubIdx, newEnd)
+		return x
+	}
+	m.Primitives[PrimDebug] = func(args int) int { return m.Print("debug", m.Car(args)) }
+	m.Primitives[PrimAppend] = func(args int) int {
+		x, y := m.Car(args), m.Car(m.Cdr(args))
+		pX, pY := x, y
+		if m.IsAtom(x) {
+			pX = Nil
+		}
+		if m.IsAtom(y) {
+			pY = Nil
+		}
+		return m.AppendList(pX, pY)
+	}
+	m.Primitives[PrimLength] = m.prim1(m.Length)
+	m.Primitives[PrimLt] = func(args int) int {
+		return m.boolToSym(m.Compare(m.ToNum(m.Car(args)), m.ToNum(m.Car(m.Cdr(args)))) == '<')
+	}
+	m.Primitives[PrimGt] = func(args int) int {
+		return m.boolToSym(m.Compare(m.ToNum(m.Car(args)), m.ToNum(m.Car(m.Cdr(args)))) == '>')
+	}
+	m.Primitives[PrimLeq] = func(args int) int {
+		cmp := m.Compare(m.ToNum(m.Car(args)), m.ToNum(m.Car(m.Cdr(args))))
+		return m.boolToSym(cmp == '<' || cmp == '=')
+	}
+	m.Primitives[PrimGeq] = func(args int) int {
+		cmp := m.Compare(m.ToNum(m.Car(args)), m.ToNum(m.Car(m.Cdr(args))))
+		return m.boolToSym(cmp == '>' || cmp == '=')
+	}
+	m.Primitives[PrimPlus] = func(args int) int {
+		return m.binaryOp(m.Car(args), m.Car(m.Cdr(args)), func(a, b *big.Int) *big.Int { return new(big.Int).Add(a, b) })
+	}
+	m.Primitives[PrimTimes] = func(args int) int {
+		return m.binaryOp(m.Car(args), m.Car(m.Cdr(args)), func(a, b *big.Int) *big.Int { return new(big.Int).Mul(a, b) })
+	}
+	m.Primitives[PrimPow] = func(args int) int {
+		return m.binaryOp(m.Car(args), m.Car(m.Cdr(args)), func(a, b *big.Int) *big.Int { return new(big.Int).Exp(a, b, nil) })
+	}
+	m.Primitives[PrimMinus] = func(args int) int {
+		x, y := m.Car(args), m.Car(m.Cdr(args))
+		if m.Compare(m.ToNum(x), m.ToNum(y)) != '>' {
+			return m.MkNum(big.NewInt(0))
+		}
+		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Sub(a, b) })
+	}
+	m.Primitives[Prim2To10] = func(args int) int { return m.MkNum(m.Base2To10(m.Car(args))) }
+	m.Primitives[Prim10To2] = func(args int) int { return m.Base10To2(m.ToNum(m.Car(args))) }
+	m.Primitives[PrimSize] = func(args int) int { return m.MkNum(m.Size(m.Car(args))) }
+	m.Primitives[PrimReadBit] = func(args int) int { return m.ReadBit() }
+	m.Primitives[PrimBits] = func(args int) int {
+		v := m.List(Nil)
+		m.Q = v
+		m.WriteLisp(m.Car(args))
+		m.WriteChar('\n')
+		return m.Cdr(v)
+	}
+	m.Primitives[PrimReadExp] = func(args int) int {
+		v := m.ReadRecord()
+		if v < 0 {
+			return v
+		}
+		return m.ReadExpr(false)
+	}
 }
 
 func (m *Machine) alloc() int {
@@ -639,13 +733,6 @@ func (m *Machine) Ev(e int) int {
 	return v
 }
 
-func (m *Machine) ExtractArgs(args int) (int, int, int) {
-	x := m.Car(args)
-	y := m.Car(m.Cdr(args))
-	z := m.Car(m.Cdr(m.Cdr(args)))
-	return x, y, z
-}
-
 func (m *Machine) Eval(e, d int) int {
 	var f, v, args, x, y, z int
 
@@ -688,83 +775,13 @@ func (m *Machine) Eval(e, d int) int {
 		return args
 	}
 
-	x, y, z = m.ExtractArgs(args)
+	x = m.Car(args)
+	y = m.Car(m.Cdr(args))
+	z = m.Car(m.Cdr(m.Cdr(args)))
 
-	switch m.PrimCode(f) {
-	case PrimCar:
-		return m.Car(x)
-	case PrimCdr:
-		return m.Cdr(x)
-	case PrimCons:
-		return m.Cons(x, y)
-	case PrimAtom:
-		return m.boolToSym(m.IsAtom(x))
-	case PrimEq:
-		return m.boolToSym(m.Eq(x, y))
-	case PrimDisplay:
-		if m.Car(m.DisplayEnabled) != 0 {
-			return m.Print("display", x)
-		}
-		stubIdx := m.Car(m.CapturedDisplays)
-		oldEnd := m.Car(stubIdx)
-		newEnd := m.List(x)
-		m.SetCdr(oldEnd, newEnd)
-		m.SetCar(stubIdx, newEnd)
-		return x
-	case PrimDebug:
-		return m.Print("debug", x)
-	case PrimAppend:
-		pX, pY := x, y
-		if m.IsAtom(x) {
-			pX = Nil
-		}
-		if m.IsAtom(y) {
-			pY = Nil
-		}
-		return m.AppendList(pX, pY)
-	case PrimLength:
-		return m.Length(x)
-	case PrimLt:
-		return m.boolToSym(m.Compare(m.ToNum(x), m.ToNum(y)) == '<')
-	case PrimGt:
-		return m.boolToSym(m.Compare(m.ToNum(x), m.ToNum(y)) == '>')
-	case PrimLeq:
-		cmp := m.Compare(m.ToNum(x), m.ToNum(y))
-		return m.boolToSym(cmp == '<' || cmp == '=')
-	case PrimGeq:
-		cmp := m.Compare(m.ToNum(x), m.ToNum(y))
-		return m.boolToSym(cmp == '>' || cmp == '=')
-	case PrimPlus:
-		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Add(a, b) })
-	case PrimTimes:
-		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Mul(a, b) })
-	case PrimPow:
-		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Exp(a, b, nil) })
-	case PrimMinus:
-		if m.Compare(m.ToNum(x), m.ToNum(y)) != '>' {
-			return m.MkNum(big.NewInt(0))
-		}
-		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Sub(a, b) })
-	case Prim2To10:
-		return m.MkNum(m.Base2To10(x))
-	case Prim10To2:
-		return m.Base10To2(m.ToNum(x))
-	case PrimSize:
-		return m.MkNum(m.Size(x))
-	case PrimReadBit:
-		return m.ReadBit()
-	case PrimBits:
-		v = m.List(Nil)
-		m.Q = v
-		m.WriteLisp(x)
-		m.WriteChar('\n')
-		return m.Cdr(v)
-	case PrimReadExp:
-		v = m.ReadRecord()
-		if v < 0 {
-			return v
-		}
-		return m.ReadExpr(false)
+	code := m.PrimCode(f)
+	if code > PrimNone && code <= PrimReadExp && m.Primitives[code] != nil {
+		return m.Primitives[code](args)
 	}
 
 	if d != m.SymNoTimeLimit {

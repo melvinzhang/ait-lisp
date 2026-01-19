@@ -435,60 +435,73 @@ func (m *Machine) GetChar() int {
 
 // --- Parser ---
 
-func (m *Machine) InWord2() int {
-	var character, word, line, endOfLine, endOfBuffer int
-	for m.InWordBuffer == Nil {
-		line = m.Cons(Nil, Nil)
-		endOfLine = line
-		for {
-			character = m.GetChar()
-			fmt.Fprintf(m.Writer, "%c", character)
-			newNode := m.Cons(character, Nil)
-			m.SetCdr(endOfLine, newNode)
-			endOfLine = newNode
-			if character == '\n' {
-				break
-			}
+func (m *Machine) tokenizeLine(getChar func() int, isSeparator func(int) bool) int {
+	line := m.Cons(Nil, Nil)
+	endOfLine := line
+	for {
+		character := getChar()
+		if character < 0 {
+			return character
 		}
+		newNode := m.Cons(character, Nil)
+		m.SetCdr(endOfLine, newNode)
+		endOfLine = newNode
+		if character == '\n' {
+			break
+		}
+	}
+	line = m.Cdr(line)
+
+	tokens := m.Cons(Nil, Nil)
+	endOfTokens := tokens
+	word := Nil
+
+	for line != Nil {
+		character := m.Car(line)
 		line = m.Cdr(line)
-
-		m.InWordBuffer = m.Cons(Nil, Nil)
-		endOfBuffer = m.InWordBuffer
-		word = Nil
-
-		for line != Nil {
-			character = m.Car(line)
-			line = m.Cdr(line)
-			if character == ' ' || character == '\n' || character == '(' ||
-				character == ')' || character == '[' || character == ']' ||
-				character == '\'' || character == '"' {
-				if word != Nil {
-					newNode := m.Cons(word, Nil)
-					m.SetCdr(endOfBuffer, newNode)
-					endOfBuffer = newNode
-				}
-				word = Nil
-				if character != ' ' && character != '\n' {
-					newNode := m.Cons(m.Cons(character, Nil), Nil)
-					m.SetCdr(endOfBuffer, newNode)
-					endOfBuffer = newNode
-				}
-			} else {
-				if 32 < character && character < 127 {
-					word = m.Cons(character, word)
-				}
+		if isSeparator(character) {
+			if word != Nil {
+				newNode := m.Cons(word, Nil)
+				m.SetCdr(endOfTokens, newNode)
+				endOfTokens = newNode
+			}
+			word = Nil
+			if character != ' ' && character != '\n' {
+				newNode := m.Cons(m.Cons(character, Nil), Nil)
+				m.SetCdr(endOfTokens, newNode)
+				endOfTokens = newNode
+			}
+		} else {
+			if 32 < character && character < 127 {
+				word = m.Cons(character, word)
 			}
 		}
-		m.InWordBuffer = m.Cdr(m.InWordBuffer)
 	}
-	word = m.Car(m.InWordBuffer)
+	return m.Cdr(tokens)
+}
+
+func (m *Machine) tokenToExpr(token int) int {
+	if m.OnlyDigits(token) {
+		return m.MkNum(m.ParseDecimal(token))
+	}
+	return m.LookupWord(token)
+}
+
+func (m *Machine) InWord2() int {
+	for m.InWordBuffer == Nil {
+		m.InWordBuffer = m.tokenizeLine(func() int {
+			character := m.GetChar()
+			fmt.Fprintf(m.Writer, "%c", character)
+			return character
+		}, func(character int) bool {
+			return character == ' ' || character == '\n' || character == '(' ||
+				character == ')' || character == '[' || character == ']' ||
+				character == '\'' || character == '"'
+		})
+	}
+	word := m.Car(m.InWordBuffer)
 	m.InWordBuffer = m.Cdr(m.InWordBuffer)
-	if m.OnlyDigits(word) {
-		word = m.MkNum(m.ParseDecimal(word))
-	} else {
-		word = m.LookupWord(word)
-	}
-	return word
+	return m.tokenToExpr(word)
 }
 
 func (m *Machine) OnlyDigits(x int) bool {
@@ -1057,45 +1070,13 @@ func (m *Machine) ReadChar() int {
 }
 
 func (m *Machine) ReadRecord() int {
-	line := m.Cons(Nil, Nil)
-	end := line
-	for {
-		c := m.ReadChar()
-		if c < 0 {
-			return c
-		}
-		node := m.Cons(c, Nil)
-		m.SetCdr(end, node)
-		end = node
-		if c == '\n' {
-			break
-		}
+	tokens := m.tokenizeLine(m.ReadChar, func(c int) bool {
+		return c == ' ' || c == '\n' || c == '(' || c == ')'
+	})
+	if tokens < 0 {
+		return tokens
 	}
-	line = m.Cdr(line)
-
-	m.Buffer2 = m.Cons(Nil, Nil)
-	bufEnd := m.Buffer2
-	word := Nil
-	for line != Nil {
-		c := m.Car(line)
-		line = m.Cdr(line)
-		if c == ' ' || c == '\n' || c == '(' || c == ')' {
-			if word != Nil {
-				node := m.Cons(word, Nil)
-				m.SetCdr(bufEnd, node)
-				bufEnd = node
-			}
-			word = Nil
-			if c != ' ' && c != '\n' {
-				node := m.Cons(m.Cons(c, Nil), Nil)
-				m.SetCdr(bufEnd, node)
-				bufEnd = node
-			}
-		} else if 32 < c && c < 127 {
-			word = m.Cons(c, word)
-		}
-	}
-	m.Buffer2 = m.Cdr(m.Buffer2)
+	m.Buffer2 = tokens
 	return 0
 }
 
@@ -1105,12 +1086,7 @@ func (m *Machine) ReadWord() int {
 	}
 	word := m.Car(m.Buffer2)
 	m.Buffer2 = m.Cdr(m.Buffer2)
-	if m.OnlyDigits(word) {
-		word = m.MkNum(m.ParseDecimal(word))
-	} else {
-		word = m.LookupWord(word)
-	}
-	return word
+	return m.tokenToExpr(word)
 }
 
 func (m *Machine) ReadExpr(rparen bool) int {

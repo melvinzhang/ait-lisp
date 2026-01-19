@@ -16,6 +16,12 @@ const (
 )
 
 const (
+	KindCons = iota
+	KindNumber
+	KindAtom
+)
+
+const (
 	PrimNone = iota
 	PrimCar
 	PrimCdr
@@ -44,42 +50,15 @@ const (
 
 // --- Machine Definition ---
 
-type SExp interface {
-	isSExp()
-	AsCons() *ConsNode
-	AsNumber() *NumberNode
-	AsAtom() *AtomNode
+type Node struct {
+	Kind                  int
+	Car, Cdr              int
+	Num                   *big.Int
+	Name, Val, Code, Args int
 }
-
-type ConsNode struct {
-	Car, Cdr int
-}
-
-func (n *ConsNode) isSExp()             {}
-func (n *ConsNode) AsCons() *ConsNode   { return n }
-func (n *ConsNode) AsNumber() *NumberNode { return nil }
-func (n *ConsNode) AsAtom() *AtomNode   { return nil }
-
-type NumberNode struct {
-	Value *big.Int
-}
-
-func (n *NumberNode) isSExp()             {}
-func (n *NumberNode) AsCons() *ConsNode   { return nil }
-func (n *NumberNode) AsNumber() *NumberNode { return n }
-func (n *NumberNode) AsAtom() *AtomNode   { return nil }
-
-type AtomNode struct {
-	Name, Value, PrimCode, PrimArgs int
-}
-
-func (n *AtomNode) isSExp()             {}
-func (n *AtomNode) AsCons() *ConsNode   { return nil }
-func (n *AtomNode) AsNumber() *NumberNode { return nil }
-func (n *AtomNode) AsAtom() *AtomNode   { return n }
 
 type Machine struct {
-	Nodes      []SExp
+	Nodes      []Node
 	ObjectList int
 
 	SymNil, SymTrue, SymFalse, SymDefine, SymLet, SymLambda, SymQuote, SymIf int
@@ -105,7 +84,7 @@ type Machine struct {
 
 func NewMachine(r io.Reader, w io.Writer) *Machine {
 	return &Machine{
-		Nodes:        make([]SExp, Size),
+		Nodes:        make([]Node, Size),
 		NextFree:     0,
 		Col:          0,
 		TimeEval:     0,
@@ -201,10 +180,11 @@ func (m *Machine) alloc() int {
 
 func (m *Machine) MkAtom(number int, name string, args int) int {
 	a := m.alloc()
-	m.Nodes[a] = &AtomNode{
-		Name:     m.MkString(name),
-		PrimCode: number,
-		PrimArgs: args,
+	m.Nodes[a] = Node{
+		Kind: KindAtom,
+		Name: m.MkString(name),
+		Code: number,
+		Args: args,
 	}
 	m.SetValue(a, m.List(a))
 	m.ObjectList = m.Cons(a, m.ObjectList)
@@ -213,8 +193,9 @@ func (m *Machine) MkAtom(number int, name string, args int) int {
 
 func (m *Machine) MkNum(value *big.Int) int {
 	a := m.alloc()
-	m.Nodes[a] = &NumberNode{
-		Value: new(big.Int).Set(value),
+	m.Nodes[a] = Node{
+		Kind: KindNumber,
+		Num:  new(big.Int).Set(value),
 	}
 	return a
 }
@@ -223,8 +204,8 @@ func (m *Machine) ToBigInt(x int) *big.Int {
 	if x == Nil {
 		return big.NewInt(0)
 	}
-	if n := m.Nodes[x].AsNumber(); n != nil {
-		return new(big.Int).Set(n.Value)
+	if m.Nodes[x].Kind == KindNumber {
+		return new(big.Int).Set(m.Nodes[x].Num)
 	}
 	return big.NewInt(0)
 }
@@ -261,9 +242,10 @@ func (m *Machine) Cons(x, y int) int {
 		return x
 	}
 	z := m.alloc()
-	m.Nodes[z] = &ConsNode{
-		Car: x,
-		Cdr: y,
+	m.Nodes[z] = Node{
+		Kind: KindCons,
+		Car:  x,
+		Cdr:  y,
 	}
 	return z
 }
@@ -286,77 +268,77 @@ func (m *Machine) boolToSym(b bool) int {
 // --- Accessors ---
 
 func (m *Machine) Car(x int) int {
-	if n := m.Nodes[x].AsCons(); n != nil {
-		return n.Car
+	if m.Nodes[x].Kind == KindCons {
+		return m.Nodes[x].Car
 	}
 	return x
 }
 
 func (m *Machine) Cdr(x int) int {
-	if n := m.Nodes[x].AsCons(); n != nil {
-		return n.Cdr
+	if m.Nodes[x].Kind == KindCons {
+		return m.Nodes[x].Cdr
 	}
 	return x
 }
 
 func (m *Machine) SetCar(x, y int) {
-	if n := m.Nodes[x].AsCons(); n != nil {
-		n.Car = y
+	if m.Nodes[x].Kind == KindCons {
+		m.Nodes[x].Car = y
 	}
 }
 
 func (m *Machine) SetCdr(x, y int) {
-	if n := m.Nodes[x].AsCons(); n != nil {
-		n.Cdr = y
+	if m.Nodes[x].Kind == KindCons {
+		m.Nodes[x].Cdr = y
 	}
 }
 
 func (m *Machine) Value(x int) int {
-	if n := m.Nodes[x].AsAtom(); n != nil {
-		return n.Value
+	if m.Nodes[x].Kind == KindAtom {
+		return m.Nodes[x].Val
 	}
 	return Nil
 }
 
 func (m *Machine) SetValue(x, y int) {
-	if n := m.Nodes[x].AsAtom(); n != nil {
-		n.Value = y
+	if m.Nodes[x].Kind == KindAtom {
+		m.Nodes[x].Val = y
 	}
 }
 
 func (m *Machine) Name(x int) int {
-	if n := m.Nodes[x].AsAtom(); n != nil {
-		return n.Name
+	if m.Nodes[x].Kind == KindAtom {
+		return m.Nodes[x].Name
 	}
 	return Nil
 }
 
 func (m *Machine) SetName(x, y int) {
-	if n := m.Nodes[x].AsAtom(); n != nil {
-		n.Name = y
+	if m.Nodes[x].Kind == KindAtom {
+		m.Nodes[x].Name = y
 	}
 }
 
 func (m *Machine) PrimCode(x int) int {
-	if n := m.Nodes[x].AsAtom(); n != nil {
-		return n.PrimCode
+	if m.Nodes[x].Kind == KindAtom {
+		return m.Nodes[x].Code
 	}
 	return PrimNone
 }
 
 func (m *Machine) PrimArgs(x int) int {
-	if n := m.Nodes[x].AsAtom(); n != nil {
-		return n.PrimArgs
+	if m.Nodes[x].Kind == KindAtom {
+		return m.Nodes[x].Args
 	}
 	return 0
 }
 
 func (m *Machine) IsAtom(x int) bool {
-	return m.Nodes[x].AsCons() == nil
+	return m.Nodes[x].Kind != KindCons
 }
 
 func (m *Machine) IsNumber(x int) bool {
-	return m.Nodes[x].AsNumber() != nil
+	return m.Nodes[x].Kind == KindNumber
 }
 
 // --- Output ---

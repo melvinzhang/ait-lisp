@@ -543,8 +543,23 @@ func (m *Machine) InWord() int {
 	}
 }
 
+func (m *Machine) readList(read func(bool) int) int {
+	first := m.Cons(Nil, Nil)
+	last := first
+	for {
+		next := read(true)
+		if next == m.RightParen || next < 0 {
+			break
+		}
+		newNode := m.Cons(next, Nil)
+		m.SetCdr(last, newNode)
+		last = newNode
+	}
+	return m.Cdr(first)
+}
+
 func (m *Machine) Read(mexp bool, rparenokay bool) int {
-	var w, first, last, next, name, def, body, varLst, i int
+	var w, name, def, body, varLst, i int
 	w = m.InWord()
 	if w == m.RightParen {
 		if rparenokay {
@@ -553,18 +568,7 @@ func (m *Machine) Read(mexp bool, rparenokay bool) int {
 		return Nil
 	}
 	if w == m.LeftParen {
-		first = m.Cons(Nil, Nil)
-		last = first
-		for {
-			next = m.Read(mexp, true)
-			if next == m.RightParen {
-				break
-			}
-			newNode := m.Cons(next, Nil)
-			m.SetCdr(last, newNode)
-			last = newNode
-		}
-		return m.Cdr(first)
+		return m.readList(func(r bool) int { return m.Read(mexp, r) })
 	}
 	if !mexp {
 		return w
@@ -607,8 +611,8 @@ func (m *Machine) Read(mexp bool, rparenokay bool) int {
 	if i == 0 {
 		return w
 	}
-	first = m.Cons(w, Nil)
-	last = first
+	first := m.Cons(w, Nil)
+	last := first
 	i--
 	for i > 0 {
 		newNode := m.Cons(m.Read(true, false), Nil)
@@ -1117,21 +1121,7 @@ func (m *Machine) ReadExpr(rparen bool) int {
 		return Nil
 	}
 	if w == m.LeftParen {
-		first := m.Cons(Nil, Nil)
-		last := first
-		for {
-			next := m.ReadExpr(true)
-			if next == m.RightParen {
-				break
-			}
-			if next < 0 {
-				return next
-			}
-			node := m.Cons(next, Nil)
-			m.SetCdr(last, node)
-			last = node
-		}
-		return m.Cdr(first)
+		return m.readList(func(bool) int { return m.ReadExpr(true) })
 	}
 	return w
 }

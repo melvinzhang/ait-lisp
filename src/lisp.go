@@ -206,7 +206,7 @@ func (m *Machine) MkAtom(number int, name string, args int) int {
 		PrimCode: number,
 		PrimArgs: args,
 	}
-	m.SetValue(a, m.Cons(a, Nil))
+	m.SetValue(a, m.List(a))
 	m.ObjectList = m.Cons(a, m.ObjectList)
 	return a
 }
@@ -227,6 +227,10 @@ func (m *Machine) ToBigInt(x int) *big.Int {
 		return new(big.Int).Set(n.Value)
 	}
 	return big.NewInt(0)
+}
+
+func (m *Machine) ToNumBigInt(x int) *big.Int {
+	return m.ToBigInt(m.ToNum(x))
 }
 
 func (m *Machine) ParseDecimal(x int) *big.Int {
@@ -262,6 +266,21 @@ func (m *Machine) Cons(x, y int) int {
 		Cdr: y,
 	}
 	return z
+}
+
+func (m *Machine) List(elements ...int) int {
+	res := Nil
+	for i := len(elements) - 1; i >= 0; i-- {
+		res = m.Cons(elements[i], res)
+	}
+	return res
+}
+
+func (m *Machine) boolToSym(b bool) int {
+	if b {
+		return m.SymTrue
+	}
+	return m.SymFalse
 }
 
 // --- Accessors ---
@@ -407,7 +426,7 @@ func (m *Machine) PrintChar(x int) {
 // --- Utils ---
 
 func (m *Machine) binaryOp(x, y int, op func(*big.Int, *big.Int) *big.Int) int {
-	return m.MkNum(op(m.ToBigInt(m.ToNum(x)), m.ToBigInt(m.ToNum(y))))
+	return m.MkNum(op(m.ToNumBigInt(x), m.ToNumBigInt(y)))
 }
 
 func (m *Machine) EqWord(x, y int) bool {
@@ -450,14 +469,14 @@ func (m *Machine) GetChar() int {
 // --- Parser ---
 
 func (m *Machine) tokenizeLine(getChar func() int, isSeparator func(int) bool) int {
-	line := m.Cons(Nil, Nil)
+	line := m.List(Nil)
 	endOfLine := line
 	for {
 		character := getChar()
 		if character < 0 {
 			return character
 		}
-		newNode := m.Cons(character, Nil)
+		newNode := m.List(character)
 		m.SetCdr(endOfLine, newNode)
 		endOfLine = newNode
 		if character == '\n' {
@@ -466,7 +485,7 @@ func (m *Machine) tokenizeLine(getChar func() int, isSeparator func(int) bool) i
 	}
 	line = m.Cdr(line)
 
-	tokens := m.Cons(Nil, Nil)
+	tokens := m.List(Nil)
 	endOfTokens := tokens
 	word := Nil
 
@@ -475,13 +494,13 @@ func (m *Machine) tokenizeLine(getChar func() int, isSeparator func(int) bool) i
 		line = m.Cdr(line)
 		if isSeparator(character) {
 			if word != Nil {
-				newNode := m.Cons(word, Nil)
+				newNode := m.List(word)
 				m.SetCdr(endOfTokens, newNode)
 				endOfTokens = newNode
 			}
 			word = Nil
 			if character != ' ' && character != '\n' {
-				newNode := m.Cons(m.Cons(character, Nil), Nil)
+				newNode := m.List(m.List(character))
 				m.SetCdr(endOfTokens, newNode)
 				endOfTokens = newNode
 			}
@@ -542,14 +561,14 @@ func (m *Machine) InWord() int {
 }
 
 func (m *Machine) readList(read func(bool) int) int {
-	first := m.Cons(Nil, Nil)
+	first := m.List(Nil)
 	last := first
 	for {
 		next := read(true)
 		if next == m.RightParen || next < 0 {
 			break
 		}
-		newNode := m.Cons(next, Nil)
+		newNode := m.List(next)
 		m.SetCdr(last, newNode)
 		last = newNode
 	}
@@ -576,23 +595,17 @@ func (m *Machine) Read(mexp bool, rparenokay bool) int {
 	}
 	if w == m.SymCadr {
 		sexp := m.Read(true, false)
-		sexp = m.Cons(m.SymCdr, m.Cons(sexp, Nil))
-		return m.Cons(m.SymCar, m.Cons(sexp, Nil))
+		return m.List(m.SymCar, m.List(m.SymCdr, sexp))
 	}
 	if w == m.SymCaddr {
 		sexp := m.Read(true, false)
-		sexp = m.Cons(m.SymCdr, m.Cons(sexp, Nil))
-		sexp = m.Cons(m.SymCdr, m.Cons(sexp, Nil))
-		return m.Cons(m.SymCar, m.Cons(sexp, Nil))
+		return m.List(m.SymCar, m.List(m.SymCdr, m.List(m.SymCdr, sexp)))
 	}
 	if w == m.SymUtm {
 		sexp := m.Read(true, false)
-		sexp = m.Cons(sexp, Nil)
-		sexp = m.Cons(m.Cons(m.SymQuote, m.Cons(m.Cons(m.SymEval, m.Cons(m.Cons(m.SymReadExp, Nil), Nil)), Nil)), sexp)
-		sexp = m.Cons(m.SymTry, m.Cons(m.SymNoTimeLimit, sexp))
-		sexp = m.Cons(m.SymCdr, m.Cons(sexp, Nil))
-		sexp = m.Cons(m.SymCar, m.Cons(sexp, Nil))
-		return sexp
+		inner := m.List(m.SymQuote, m.List(m.SymEval, m.List(m.SymReadExp)))
+		try_ := m.List(m.SymTry, m.SymNoTimeLimit, inner, sexp)
+		return m.List(m.SymCar, m.List(m.SymCdr, try_))
 	}
 	if w == m.SymLet {
 		name = m.Read(true, false)
@@ -601,19 +614,19 @@ func (m *Machine) Read(mexp bool, rparenokay bool) int {
 		if !m.IsAtom(name) {
 			varLst = m.Cdr(name)
 			name = m.Car(name)
-			def = m.Cons(m.SymQuote, m.Cons(m.Cons(m.SymLambda, m.Cons(varLst, m.Cons(def, Nil))), Nil))
+			def = m.List(m.SymQuote, m.List(m.SymLambda, varLst, def))
 		}
-		return m.Cons(m.Cons(m.SymQuote, m.Cons(m.Cons(m.SymLambda, m.Cons(m.Cons(name, Nil), m.Cons(body, Nil))), Nil)), m.Cons(def, Nil))
+		return m.List(m.List(m.SymQuote, m.List(m.SymLambda, m.List(name), body)), def)
 	}
 	i = m.PrimArgs(w)
 	if i == 0 {
 		return w
 	}
-	first := m.Cons(w, Nil)
+	first := m.List(w)
 	last := first
 	i--
 	for i > 0 {
-		newNode := m.Cons(m.Read(true, false), Nil)
+		newNode := m.List(m.Read(true, false))
 		m.SetCdr(last, newNode)
 		last = newNode
 		i--
@@ -624,14 +637,21 @@ func (m *Machine) Read(mexp bool, rparenokay bool) int {
 // --- Evaluator ---
 
 func (m *Machine) Ev(e int) int {
-	m.Tapes = m.Cons(Nil, Nil)
-	m.DisplayEnabled = m.Cons(1, Nil)
-	m.CapturedDisplays = m.Cons(Nil, Nil)
+	m.Tapes = m.List(Nil)
+	m.DisplayEnabled = m.List(1)
+	m.CapturedDisplays = m.List(Nil)
 	v := m.Eval(e, m.SymNoTimeLimit)
 	if v < 0 {
 		return -v
 	}
 	return v
+}
+
+func (m *Machine) ExtractArgs(args int) (int, int, int) {
+	x := m.Car(args)
+	y := m.Car(m.Cdr(args))
+	z := m.Car(m.Cdr(m.Cdr(args)))
+	return x, y, z
 }
 
 func (m *Machine) Eval(e, d int) int {
@@ -676,9 +696,7 @@ func (m *Machine) Eval(e, d int) int {
 		return args
 	}
 
-	x = m.Car(args)
-	y = m.Car(m.Cdr(args))
-	z = m.Car(m.Cdr(m.Cdr(args)))
+	x, y, z = m.ExtractArgs(args)
 
 	switch m.PrimCode(f) {
 	case PrimCar:
@@ -688,22 +706,16 @@ func (m *Machine) Eval(e, d int) int {
 	case PrimCons:
 		return m.Cons(x, y)
 	case PrimAtom:
-		if m.IsAtom(x) {
-			return m.SymTrue
-		}
-		return m.SymFalse
+		return m.boolToSym(m.IsAtom(x))
 	case PrimEq:
-		if m.Eq(x, y) {
-			return m.SymTrue
-		}
-		return m.SymFalse
+		return m.boolToSym(m.Eq(x, y))
 	case PrimDisplay:
 		if m.Car(m.DisplayEnabled) != 0 {
 			return m.Print("display", x)
 		}
 		stubIdx := m.Car(m.CapturedDisplays)
 		oldEnd := m.Car(stubIdx)
-		newEnd := m.Cons(x, Nil)
+		newEnd := m.List(x)
 		m.SetCdr(oldEnd, newEnd)
 		m.SetCar(stubIdx, newEnd)
 		return x
@@ -721,27 +733,15 @@ func (m *Machine) Eval(e, d int) int {
 	case PrimLength:
 		return m.Length(x)
 	case PrimLt:
-		if m.Compare(m.ToNum(x), m.ToNum(y)) == '<' {
-			return m.SymTrue
-		}
-		return m.SymFalse
+		return m.boolToSym(m.Compare(m.ToNum(x), m.ToNum(y)) == '<')
 	case PrimGt:
-		if m.Compare(m.ToNum(x), m.ToNum(y)) == '>' {
-			return m.SymTrue
-		}
-		return m.SymFalse
+		return m.boolToSym(m.Compare(m.ToNum(x), m.ToNum(y)) == '>')
 	case PrimLeq:
 		cmp := m.Compare(m.ToNum(x), m.ToNum(y))
-		if cmp == '<' || cmp == '=' {
-			return m.SymTrue
-		}
-		return m.SymFalse
+		return m.boolToSym(cmp == '<' || cmp == '=')
 	case PrimGeq:
 		cmp := m.Compare(m.ToNum(x), m.ToNum(y))
-		if cmp == '>' || cmp == '=' {
-			return m.SymTrue
-		}
-		return m.SymFalse
+		return m.boolToSym(cmp == '>' || cmp == '=')
 	case PrimPlus:
 		return m.binaryOp(x, y, func(a, b *big.Int) *big.Int { return new(big.Int).Add(a, b) })
 	case PrimTimes:
@@ -762,7 +762,7 @@ func (m *Machine) Eval(e, d int) int {
 	case PrimReadBit:
 		return m.ReadBit()
 	case PrimBits:
-		v = m.Cons(Nil, Nil)
+		v = m.List(Nil)
 		m.Q = v
 		m.WriteLisp(x)
 		m.WriteChar('\n')
@@ -801,7 +801,7 @@ func (m *Machine) Eval(e, d int) int {
 		}
 		m.Tapes = m.Cons(z, m.Tapes)
 		m.DisplayEnabled = m.Cons(0, m.DisplayEnabled)
-		stub = m.Cons(0, Nil)
+		stub = m.List(0)
 		m.SetCar(stub, stub)
 		m.CapturedDisplays = m.Cons(stub, m.CapturedDisplays)
 		m.CleanEnv()
@@ -817,9 +817,9 @@ func (m *Machine) Eval(e, d int) int {
 			return v
 		}
 		if v < 0 {
-			return m.Cons(m.SymFailure, m.Cons(-v, m.Cons(stub, Nil)))
+			return m.List(m.SymFailure, -v, stub)
 		}
-		return m.Cons(m.SymSuccess, m.Cons(v, m.Cons(stub, Nil)))
+		return m.List(m.SymSuccess, v, stub)
 	}
 
 	if m.Car(f) == m.SymLambda {
@@ -1049,7 +1049,7 @@ func (m *Machine) WriteChar(x int) {
 		if b == 1 {
 			v = m.SymOne
 		}
-		node := m.Cons(v, Nil)
+		node := m.List(v)
 		m.SetCdr(m.Q, node)
 		m.Q = node
 	}
@@ -1126,7 +1126,7 @@ func (m *Machine) Run() {
 			if !m.IsAtom(name) {
 				varList := m.Cdr(name)
 				sName := m.Car(name)
-				newDef := m.Cons(m.SymLambda, m.Cons(varList, m.Cons(def, Nil)))
+				newDef := m.List(m.SymLambda, varList, def)
 				m.Print("define", sName)
 				m.Print("value", newDef)
 				// define was setting the Value of the symbol.

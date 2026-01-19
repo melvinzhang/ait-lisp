@@ -340,40 +340,48 @@ func (m *Machine) Print(label string, x int) int {
 	return x
 }
 
-func (m *Machine) PrintList(x int) {
+func (m *Machine) serialize(x int, out func(int)) {
 	if m.IsNumber(x) {
 		val := m.ToBigInt(x)
 		if val.Sign() == 0 {
-			m.PrintChar('0')
+			out('0')
 			return
 		}
 		s := val.String()
 		for i := 0; i < len(s); i++ {
-			m.PrintChar(int(s[i]))
+			out(int(s[i]))
 		}
 		return
 	}
 	if m.IsAtom(x) {
-		m.PrintAtomName(m.Name(x))
+		m.serializeName(m.Name(x), out)
 		return
 	}
-	m.PrintChar('(')
+	out('(')
 	for !m.IsAtom(x) {
-		m.PrintList(m.Car(x))
+		m.serialize(m.Car(x), out)
 		x = m.Cdr(x)
 		if !m.IsAtom(x) {
-			m.PrintChar(' ')
+			out(' ')
 		}
 	}
-	m.PrintChar(')')
+	out(')')
 }
 
-func (m *Machine) PrintAtomName(x int) {
+func (m *Machine) serializeName(x int, out func(int)) {
 	if x == Nil {
 		return
 	}
-	m.PrintAtomName(m.Cdr(x))
-	m.PrintChar(m.Car(x))
+	m.serializeName(m.Cdr(x), out)
+	out(m.Car(x))
+}
+
+func (m *Machine) PrintList(x int) {
+	m.serialize(x, m.PrintChar)
+}
+
+func (m *Machine) WriteLisp(x int) {
+	m.serialize(x, m.WriteChar)
 }
 
 func (m *Machine) PrintChar(x int) {
@@ -1030,42 +1038,6 @@ func (m *Machine) WriteChar(x int) {
 		m.SetCdr(m.Q, node)
 		m.Q = node
 	}
-}
-
-func (m *Machine) WriteLisp(x int) {
-	if m.IsNumber(x) {
-		val := m.ToBigInt(x)
-		if val.Sign() == 0 {
-			m.WriteChar('0')
-			return
-		}
-		s := val.String()
-		for i := 0; i < len(s); i++ {
-			m.WriteChar(int(s[i]))
-		}
-		return
-	}
-	if m.IsAtom(x) {
-		m.WriteAtomName(m.Name(x))
-		return
-	}
-	m.WriteChar('(')
-	for !m.IsAtom(x) {
-		m.WriteLisp(m.Car(x))
-		x = m.Cdr(x)
-		if !m.IsAtom(x) {
-			m.WriteChar(' ')
-		}
-	}
-	m.WriteChar(')')
-}
-
-func (m *Machine) WriteAtomName(x int) {
-	if x == Nil {
-		return
-	}
-	m.WriteAtomName(m.Cdr(x))
-	m.WriteChar(m.Car(x))
 }
 
 func (m *Machine) ReadChar() int {

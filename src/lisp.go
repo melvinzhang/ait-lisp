@@ -110,53 +110,69 @@ func (m *Machine) Init() {
 		fmt.Fprintf(m.Writer, "nil != 0\n")
 		os.Exit(0)
 	}
-	m.SymNil = m.MkAtom(PrimNone, "nil", 0)
+
+	specs := []struct {
+		name string
+		code int
+		args int
+		ptr  *int
+	}{
+		{"nil", PrimNone, 0, &m.SymNil},
+		{"true", PrimNone, 0, &m.SymTrue},
+		{"false", PrimNone, 0, &m.SymFalse},
+		{"no-time-limit", PrimNone, 0, &m.SymNoTimeLimit},
+		{"out-of-time", PrimNone, 0, &m.SymOutOfTime},
+		{"out-of-data", PrimNone, 0, &m.SymOutOfData},
+		{"success", PrimNone, 0, &m.SymSuccess},
+		{"failure", PrimNone, 0, &m.SymFailure},
+		{"define", PrimNone, 3, &m.SymDefine},
+		{"let", PrimNone, 4, &m.SymLet},
+		{"lambda", PrimNone, 3, &m.SymLambda},
+		{"cadr", PrimNone, 2, &m.SymCadr},
+		{"caddr", PrimNone, 2, &m.SymCaddr},
+		{"run-utm-on", PrimNone, 2, &m.SymUtm},
+		{"'", PrimNone, 2, &m.SymQuote},
+		{"if", PrimNone, 4, &m.SymIf},
+		{"car", PrimCar, 2, &m.SymCar},
+		{"cdr", PrimCdr, 2, &m.SymCdr},
+		{"cons", PrimCons, 3, nil},
+		{"atom", PrimAtom, 2, nil},
+		{"=", PrimEq, 3, nil},
+		{"display", PrimDisplay, 2, nil},
+		{"debug", PrimDebug, 2, nil},
+		{"append", PrimAppend, 3, nil},
+		{"length", PrimLength, 2, nil},
+		{"<", PrimLt, 3, nil},
+		{">", PrimGt, 3, nil},
+		{"<=", PrimLeq, 3, nil},
+		{">=", PrimGeq, 3, nil},
+		{"+", PrimPlus, 3, nil},
+		{"*", PrimTimes, 3, nil},
+		{"^", PrimPow, 3, nil},
+		{"-", PrimMinus, 3, nil},
+		{"base2-to-10", Prim2To10, 2, nil},
+		{"base10-to-2", Prim10To2, 2, nil},
+		{"size", PrimSize, 2, nil},
+		{"read-bit", PrimReadBit, 1, nil},
+		{"bits", PrimBits, 2, nil},
+		{"read-exp", PrimReadExp, 1, &m.SymReadExp},
+		{"eval", PrimNone, 2, &m.SymEval},
+		{"try", PrimNone, 4, &m.SymTry},
+		{"[", PrimNone, 0, &m.LeftBracket},
+		{"]", PrimNone, 0, &m.RightBracket},
+		{"(", PrimNone, 0, &m.LeftParen},
+		{")", PrimNone, 0, &m.RightParen},
+		{"\"", PrimNone, 0, &m.DoubleQuote},
+	}
+
+	for _, s := range specs {
+		atom := m.MkAtom(s.code, s.name, s.args)
+		if s.ptr != nil {
+			*s.ptr = atom
+		}
+	}
+
 	m.SetCar(m.Value(m.SymNil), Nil)
-	m.SymTrue = m.MkAtom(PrimNone, "true", 0)
-	m.SymFalse = m.MkAtom(PrimNone, "false", 0)
-	m.SymNoTimeLimit = m.MkAtom(PrimNone, "no-time-limit", 0)
-	m.SymOutOfTime = m.MkAtom(PrimNone, "out-of-time", 0)
-	m.SymOutOfData = m.MkAtom(PrimNone, "out-of-data", 0)
-	m.SymSuccess = m.MkAtom(PrimNone, "success", 0)
-	m.SymFailure = m.MkAtom(PrimNone, "failure", 0)
-	m.SymDefine = m.MkAtom(PrimNone, "define", 3)
-	m.SymLet = m.MkAtom(PrimNone, "let", 4)
-	m.SymLambda = m.MkAtom(PrimNone, "lambda", 3)
-	m.SymCadr = m.MkAtom(PrimNone, "cadr", 2)
-	m.SymCaddr = m.MkAtom(PrimNone, "caddr", 2)
-	m.SymUtm = m.MkAtom(PrimNone, "run-utm-on", 2)
-	m.SymQuote = m.MkAtom(PrimNone, "'", 2)
-	m.SymIf = m.MkAtom(PrimNone, "if", 4)
-	m.SymCar = m.MkAtom(PrimCar, "car", 2)
-	m.SymCdr = m.MkAtom(PrimCdr, "cdr", 2)
-	m.MkAtom(PrimCons, "cons", 3)
-	m.MkAtom(PrimAtom, "atom", 2)
-	m.MkAtom(PrimEq, "=", 3)
-	m.MkAtom(PrimDisplay, "display", 2)
-	m.MkAtom(PrimDebug, "debug", 2)
-	m.MkAtom(PrimAppend, "append", 3)
-	m.MkAtom(PrimLength, "length", 2)
-	m.MkAtom(PrimLt, "<", 3)
-	m.MkAtom(PrimGt, ">", 3)
-	m.MkAtom(PrimLeq, "<=", 3)
-	m.MkAtom(PrimGeq, ">=", 3)
-	m.MkAtom(PrimPlus, "+", 3)
-	m.MkAtom(PrimTimes, "*", 3)
-	m.MkAtom(PrimPow, "^", 3)
-	m.MkAtom(PrimMinus, "-", 3)
-	m.MkAtom(Prim2To10, "base2-to-10", 2)
-	m.MkAtom(Prim10To2, "base10-to-2", 2)
-	m.MkAtom(PrimSize, "size", 2)
-	m.MkAtom(PrimReadBit, "read-bit", 1)
-	m.MkAtom(PrimBits, "bits", 2)
-	m.SymReadExp = m.MkAtom(PrimReadExp, "read-exp", 1)
-	m.SymEval = m.MkAtom(PrimNone, "eval", 2)
-	m.SymTry = m.MkAtom(PrimNone, "try", 4)
-	m.LeftBracket = m.MkAtom(PrimNone, "[", 0)
-	m.RightBracket = m.MkAtom(PrimNone, "]", 0)
-	m.LeftParen = m.MkAtom(PrimNone, "(", 0)
-	m.RightParen = m.MkAtom(PrimNone, ")", 0)
-	m.DoubleQuote = m.MkAtom(PrimNone, "\"", 0)
 	m.SymZero = m.MkNum(big.NewInt(0))
 	m.SymOne = m.MkNum(big.NewInt(1))
 }

@@ -46,25 +46,37 @@ const (
 
 type SExp interface {
 	isSExp()
+	AsCons() *ConsNode
+	AsNumber() *NumberNode
+	AsAtom() *AtomNode
 }
 
 type ConsNode struct {
 	Car, Cdr int
 }
 
-func (n *ConsNode) isSExp() {}
+func (n *ConsNode) isSExp()             {}
+func (n *ConsNode) AsCons() *ConsNode   { return n }
+func (n *ConsNode) AsNumber() *NumberNode { return nil }
+func (n *ConsNode) AsAtom() *AtomNode   { return nil }
 
 type NumberNode struct {
 	Value *big.Int
 }
 
-func (n *NumberNode) isSExp() {}
+func (n *NumberNode) isSExp()             {}
+func (n *NumberNode) AsCons() *ConsNode   { return nil }
+func (n *NumberNode) AsNumber() *NumberNode { return n }
+func (n *NumberNode) AsAtom() *AtomNode   { return nil }
 
 type AtomNode struct {
 	Name, Value, PrimCode, PrimArgs int
 }
 
-func (n *AtomNode) isSExp() {}
+func (n *AtomNode) isSExp()             {}
+func (n *AtomNode) AsCons() *ConsNode   { return nil }
+func (n *AtomNode) AsNumber() *NumberNode { return nil }
+func (n *AtomNode) AsAtom() *AtomNode   { return n }
 
 type Machine struct {
 	Nodes      []SExp
@@ -211,7 +223,7 @@ func (m *Machine) ToBigInt(x int) *big.Int {
 	if x == Nil {
 		return big.NewInt(0)
 	}
-	if n, ok := m.Nodes[x].(*NumberNode); ok {
+	if n := m.Nodes[x].AsNumber(); n != nil {
 		return new(big.Int).Set(n.Value)
 	}
 	return big.NewInt(0)
@@ -255,95 +267,77 @@ func (m *Machine) Cons(x, y int) int {
 // --- Accessors ---
 
 func (m *Machine) Car(x int) int {
-	switch n := m.Nodes[x].(type) {
-	case *ConsNode:
+	if n := m.Nodes[x].AsCons(); n != nil {
 		return n.Car
-	default:
-		return x
 	}
+	return x
 }
 
 func (m *Machine) Cdr(x int) int {
-	switch n := m.Nodes[x].(type) {
-	case *ConsNode:
+	if n := m.Nodes[x].AsCons(); n != nil {
 		return n.Cdr
-	default:
-		return x
 	}
+	return x
 }
 
 func (m *Machine) SetCar(x, y int) {
-	if n, ok := m.Nodes[x].(*ConsNode); ok {
+	if n := m.Nodes[x].AsCons(); n != nil {
 		n.Car = y
 	}
 }
 
 func (m *Machine) SetCdr(x, y int) {
-	if n, ok := m.Nodes[x].(*ConsNode); ok {
+	if n := m.Nodes[x].AsCons(); n != nil {
 		n.Cdr = y
 	}
 }
 
 func (m *Machine) Value(x int) int {
-	if n, ok := m.Nodes[x].(*AtomNode); ok {
+	if n := m.Nodes[x].AsAtom(); n != nil {
 		return n.Value
 	}
 	return Nil
 }
 
 func (m *Machine) SetValue(x, y int) {
-	if n, ok := m.Nodes[x].(*AtomNode); ok {
+	if n := m.Nodes[x].AsAtom(); n != nil {
 		n.Value = y
 	}
 }
 
 func (m *Machine) Name(x int) int {
-	switch n := m.Nodes[x].(type) {
-	case *NumberNode:
-		return Nil
-	case *AtomNode:
+	if n := m.Nodes[x].AsAtom(); n != nil {
 		return n.Name
-	default:
-		return Nil
 	}
+	return Nil
 }
 
 func (m *Machine) SetName(x, y int) {
-	if n, ok := m.Nodes[x].(*AtomNode); ok {
+	if n := m.Nodes[x].AsAtom(); n != nil {
 		n.Name = y
 	}
 }
 
 func (m *Machine) PrimCode(x int) int {
-	if n, ok := m.Nodes[x].(*AtomNode); ok {
+	if n := m.Nodes[x].AsAtom(); n != nil {
 		return n.PrimCode
 	}
 	return PrimNone
 }
 
 func (m *Machine) PrimArgs(x int) int {
-	if n, ok := m.Nodes[x].(*AtomNode); ok {
+	if n := m.Nodes[x].AsAtom(); n != nil {
 		return n.PrimArgs
 	}
 	return 0
 }
 
 func (m *Machine) IsAtom(x int) bool {
-	switch m.Nodes[x].(type) {
-	case *ConsNode:
-		return false
-	default:
-		return true // Atoms and Numbers are both "atoms" in S-exp parlance
-	}
+	return m.Nodes[x].AsCons() == nil
 }
 
 func (m *Machine) IsNumber(x int) bool {
-	switch m.Nodes[x].(type) {
-	case *NumberNode:
-		return true
-	default:
-		return false
-	}
+	return m.Nodes[x].AsNumber() != nil
 }
 
 // --- Output ---

@@ -161,13 +161,18 @@ func (m *Machine) Init() {
 	m.SymOne = m.MkNum(big.NewInt(1))
 }
 
-func (m *Machine) MkAtom(number int, name string, args int) int {
+func (m *Machine) alloc() int {
 	if m.NextFree >= Size {
 		fmt.Fprintf(m.Writer, "Storage overflow!\n")
 		os.Exit(0)
 	}
 	a := m.NextFree
 	m.NextFree++
+	return a
+}
+
+func (m *Machine) MkAtom(number int, name string, args int) int {
+	a := m.alloc()
 	m.Nodes[a] = &AtomNode{
 		Name:     m.MkString(name),
 		PrimCode: number,
@@ -179,12 +184,7 @@ func (m *Machine) MkAtom(number int, name string, args int) int {
 }
 
 func (m *Machine) MkNum(value *big.Int) int {
-	if m.NextFree >= Size {
-		fmt.Fprintf(m.Writer, "Storage overflow!\n")
-		os.Exit(0)
-	}
-	a := m.NextFree
-	m.NextFree++
+	a := m.alloc()
 	m.Nodes[a] = &NumberNode{
 		Value: new(big.Int).Set(value),
 	}
@@ -228,12 +228,7 @@ func (m *Machine) Cons(x, y int) int {
 	if y != Nil && m.IsAtom(y) {
 		return x
 	}
-	if m.NextFree >= Size {
-		fmt.Fprintf(m.Writer, "Storage overflow!\n")
-		os.Exit(0)
-	}
-	z := m.NextFree
-	m.NextFree++
+	z := m.alloc()
 	m.Nodes[z] = &ConsNode{
 		Car: x,
 		Cdr: y,

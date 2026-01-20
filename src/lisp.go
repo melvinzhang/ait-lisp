@@ -56,7 +56,7 @@ type Node struct {
 	Kind                  int
 	Car, Cdr              int
 	Num                   *big.Int
-	Name, Val, Code, Args int
+	Name, Stack, Code, Args int
 }
 
 type Machine struct {
@@ -167,7 +167,7 @@ func (m *Machine) Init() {
 		}
 	}
 
-	m.SetCar(m.Value(m.SymNil), Nil)
+	m.SetCar(m.Stack(m.SymNil), Nil)
 	m.SymZero = m.MkNum(big.NewInt(0))
 	m.SymOne = m.MkNum(big.NewInt(1))
 	m.setupPrimitives()
@@ -275,14 +275,34 @@ func (m *Machine) alloc() int {
 func (m *Machine) MkAtom(number int, name string, args int) int {
 	a := m.alloc()
 	m.Nodes[a] = Node{
-		Kind: KindAtom,
-		Name: m.MkString(name),
-		Code: number,
-		Args: args,
+		Kind:  KindAtom,
+		Name:  m.MkString(name),
+		Code:  number,
+		Args:  args,
+		Stack: Nil,
 	}
-	m.SetValue(a, m.List(a))
+	m.pushValue(a, a)
 	m.ObjectList = m.Cons(a, m.ObjectList)
 	return a
+}
+
+func (m *Machine) pushValue(atom int, val int) {
+	m.SetStack(atom, m.Cons(val, m.Stack(atom)))
+}
+
+func (m *Machine) popValue(atom int) {
+	s := m.Stack(atom)
+	if s != Nil {
+		m.SetStack(atom, m.Cdr(s))
+	}
+}
+
+func (m *Machine) peekValue(atom int) int {
+	s := m.Stack(atom)
+	if s == Nil {
+		return atom
+	}
+	return m.Car(s)
 }
 
 func (m *Machine) MkNum(value *big.Int) int {
@@ -387,16 +407,16 @@ func (m *Machine) SetCdr(x, y int) {
 	}
 }
 
-func (m *Machine) Value(x int) int {
+func (m *Machine) Stack(x int) int {
 	if m.Nodes[x].Kind == KindAtom {
-		return m.Nodes[x].Val
+		return m.Nodes[x].Stack
 	}
 	return Nil
 }
 
-func (m *Machine) SetValue(x, y int) {
+func (m *Machine) SetStack(x, y int) {
 	if m.Nodes[x].Kind == KindAtom {
-		m.Nodes[x].Val = y
+		m.Nodes[x].Stack = y
 	}
 }
 
@@ -742,7 +762,7 @@ func (m *Machine) Eval(e, d int) int {
 		return e
 	}
 	if m.IsAtom(e) {
-		return m.Car(m.Value(e))
+		return m.peekValue(e)
 	}
 	if m.Car(e) == m.SymLambda {
 		return e
@@ -792,9 +812,9 @@ func (m *Machine) Eval(e, d int) int {
 	}
 
 	if f == m.SymEval {
-		m.CleanEnv()
+		m.PushEnv()
 		v = m.Eval(x, d)
-		m.RestoreEnv()
+		m.PopEnv()
 		return v
 	}
 
@@ -813,9 +833,9 @@ func (m *Machine) Eval(e, d int) int {
 		stub = m.List(0)
 		m.SetCar(stub, stub)
 		m.CapturedDisplays = m.Cons(stub, m.CapturedDisplays)
-		m.CleanEnv()
+		m.PushEnv()
 		v = m.Eval(y, x)
-		m.RestoreEnv()
+		m.PopEnv()
 		m.Tapes = m.Cdr(m.Tapes)
 		m.DisplayEnabled = m.Cdr(m.DisplayEnabled)
 		stubIdx := m.Car(m.CapturedDisplays)
@@ -839,37 +859,28 @@ func (m *Machine) Eval(e, d int) int {
 
 		m.Bind(vars, args)
 		v = m.Eval(body, d)
-
-		for !m.IsAtom(vars) {
-			v_ := m.Car(vars)
-			if m.IsAtom(v_) {
-				m.SetValue(v_, m.Cdr(m.Value(v_)))
-			}
-			vars = m.Cdr(vars)
-		}
+		m.Unbind(vars)
 		return v
 	}
 
 	return f
 }
 
-func (m *Machine) CleanEnv() {
+func (m *Machine) PushEnv() {
 	o := m.ObjectList
 	for o != Nil {
 		v_ := m.Car(o)
-		m.SetValue(v_, m.Cons(v_, m.Value(v_)))
+		m.pushValue(v_, v_)
 		o = m.Cdr(o)
 	}
-	m.SetCar(m.Value(m.SymNil), Nil)
+	m.SetCar(m.Stack(m.SymNil), Nil)
 }
 
-func (m *Machine) RestoreEnv() {
+func (m *Machine) PopEnv() {
 	o := m.ObjectList
 	for o != Nil {
 		v_ := m.Car(o)
-		if m.Cdr(m.Value(v_)) != Nil {
-			m.SetValue(v_, m.Cdr(m.Value(v_)))
-		}
+		m.popValue(v_)
 		o = m.Cdr(o)
 	}
 }
@@ -881,8 +892,19 @@ func (m *Machine) Bind(vars, args int) {
 	m.Bind(m.Cdr(vars), m.Cdr(args))
 	v_ := m.Car(vars)
 	if m.IsAtom(v_) {
-		m.SetValue(v_, m.Cons(m.Car(args), m.Value(v_)))
+		m.pushValue(v_, m.Car(args))
 	}
+}
+
+func (m *Machine) Unbind(vars int) {
+	if m.IsAtom(vars) {
+		return
+	}
+	v_ := m.Car(vars)
+	if m.IsAtom(v_) {
+		m.popValue(v_)
+	}
+	m.Unbind(m.Cdr(vars))
 }
 
 func (m *Machine) EvalSt(e, d int) int {
@@ -1123,12 +1145,12 @@ func (m *Machine) Run() {
 				newDef := m.List(m.SymLambda, varList, def)
 				m.Print("define", sName)
 				m.Print("value", newDef)
-				// define was setting the Value of the symbol.
-				m.SetCar(m.Value(sName), newDef)
+				// define was setting the Stack of the symbol.
+				m.SetCar(m.Stack(sName), newDef)
 			} else {
 				m.Print("define", name)
 				m.Print("value", def)
-				m.SetCar(m.Value(name), def)
+				m.SetCar(m.Stack(name), def)
 			}
 			continue
 		}

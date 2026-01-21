@@ -16,7 +16,8 @@ type Sexp struct {
 	vstk []*Sexp
 }
 
-func NewSexp(h, t *Sexp) *Sexp {
+func (l *Lisp) NewSexp(h, t *Sexp) *Sexp {
+	l.cons_count++
 	return &Sexp{
 		at:    false,
 		nmb:   false,
@@ -27,7 +28,8 @@ func NewSexp(h, t *Sexp) *Sexp {
 	}
 }
 
-func NewSexpAtom(s string) *Sexp {
+func (l *Lisp) NewSexpAtom(s string) *Sexp {
+	l.cons_count++
 	z := &Sexp{
 		at:    true,
 		nmb:   false,
@@ -40,7 +42,8 @@ func NewSexpAtom(s string) *Sexp {
 	return z
 }
 
-func NewSexpNum(n *big.Int) *Sexp {
+func (l *Lisp) NewSexpNum(n *big.Int) *Sexp {
+	l.cons_count++
 	z := &Sexp{
 		at:    true,
 		nmb:   true,
@@ -100,6 +103,8 @@ type Lisp struct {
 	was_displayed_stk []*Sexp
 	was_displayed_lst *Sexp
 	echo              strings.Builder
+	eval_count        int64
+	cons_count        int64
 }
 
 func NewLisp() *Lisp {
@@ -110,8 +115,8 @@ func NewLisp() *Lisp {
 	l.nil2 = l.mk_atom("nil")
 	l.true2 = l.mk_atom("true")
 	l.false2 = l.mk_atom("false")
-	l.one = NewSexpNum(big.NewInt(1))
-	l.zero = NewSexpNum(big.NewInt(0))
+	l.one = l.NewSexpNum(big.NewInt(1))
+	l.zero = l.NewSexpNum(big.NewInt(0))
 	l.quote = l.mk_atom("'")
 	l.dbl_quote = l.mk_atom("\"")
 	l.if_then_else = l.mk_atom("if")
@@ -174,7 +179,7 @@ func (l *Lisp) jn(x, y *Sexp) *Sexp {
 	if y.at && y != l.nil_ {
 		return x
 	}
-	return NewSexp(x, y)
+	return l.NewSexp(x, y)
 }
 
 func (l *Lisp) mk_atom(x string) *Sexp {
@@ -185,8 +190,8 @@ func (l *Lisp) mk_atom(x string) *Sexp {
 		}
 		o = o.tl
 	}
-	z := NewSexpAtom(x)
-	l.obj_lst = NewSexp(z, l.obj_lst)
+	z := l.NewSexpAtom(x)
+	l.obj_lst = l.NewSexp(z, l.obj_lst)
 	return z
 }
 
@@ -255,6 +260,7 @@ func (l *Lisp) peek_vstk(s *Sexp) *Sexp {
 }
 
 func (l *Lisp) eval(e *Sexp, d int64) *Sexp {
+	l.eval_count++
 	if e.at {
 		return l.peek_vstk(e)
 	}
@@ -291,11 +297,11 @@ func (l *Lisp) eval(e *Sexp, d int64) *Sexp {
 	}
 
 	if f == l.size {
-		return NewSexpNum(big.NewInt(int64(len(x.toS()))))
+		return l.NewSexpNum(big.NewInt(int64(len(x.toS()))))
 	}
 
 	if f == l.length {
-		return NewSexpNum(big.NewInt(l.count(x)))
+		return l.NewSexpNum(big.NewInt(l.count(x)))
 	}
 
 	if f == l.display {
@@ -361,7 +367,7 @@ func (l *Lisp) eval(e *Sexp, d int64) *Sexp {
 	}
 
 	if f == l.plus {
-		return NewSexpNum(new(big.Int).Add(x.nval, y.nval))
+		return l.NewSexpNum(new(big.Int).Add(x.nval, y.nval))
 	}
 
 	if f == l.minus {
@@ -369,11 +375,11 @@ func (l *Lisp) eval(e *Sexp, d int64) *Sexp {
 		if res.Sign() < 0 {
 			res.SetInt64(0)
 		}
-		return NewSexpNum(res)
+		return l.NewSexpNum(res)
 	}
 
 	if f == l.times {
-		return NewSexpNum(new(big.Int).Mul(x.nval, y.nval))
+		return l.NewSexpNum(new(big.Int).Mul(x.nval, y.nval))
 	}
 
 	if f == l.leq {
@@ -405,7 +411,7 @@ func (l *Lisp) eval(e *Sexp, d int64) *Sexp {
 	}
 
 	if f == l.to_the_power {
-		return NewSexpNum(new(big.Int).Exp(x.nval, y.nval, nil))
+		return l.NewSexpNum(new(big.Int).Exp(x.nval, y.nval, nil))
 	}
 
 	if f == l.base10_to_2 {
@@ -413,7 +419,7 @@ func (l *Lisp) eval(e *Sexp, d int64) *Sexp {
 	}
 
 	if f == l.base2_to_10 {
-		return NewSexpNum(l.to_base10(x))
+		return l.NewSexpNum(l.to_base10(x))
 	}
 
 	if d == 0 {
@@ -573,7 +579,7 @@ func (l *Lisp) get() *Sexp {
 	} else {
 		n := new(big.Int)
 		n.SetString(t, 10)
-		a = NewSexpNum(n)
+		a = l.NewSexpNum(n)
 	}
 
 	if a == l.lparen {
@@ -763,6 +769,9 @@ func (l *Lisp) run(input string) {
 		s := l.get()
 
 		if s == l.rparen && l.pos == len(l.buffer) {
+			fmt.Printf("\nEnd of LISP Run\n\n")
+			fmt.Printf("Calls to eval = %d\n", l.eval_count)
+			fmt.Printf("Calls to cons = %d\n", l.cons_count)
 			return
 		}
 		if mexp_count > 0 {
@@ -877,7 +886,7 @@ func (l *Lisp) get_exp(delimiters string) *Sexp {
 	} else {
 		n := new(big.Int)
 		n.SetString(t, 10)
-		a = NewSexpNum(n)
+		a = l.NewSexpNum(n)
 	}
 	if a == l.lparen {
 		return l.get_list(delimiters)

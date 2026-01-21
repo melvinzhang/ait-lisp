@@ -753,6 +753,8 @@ func (l *Lisp) next_token(delimiters string) string {
 }
 
 func (l *Lisp) run(input string) {
+	fmt.Println("LISP Interpreter Run")
+	fmt.Println()
 	l.buffer = input + "\n"
 	l.pos = 0
 	mexp_count := 0
@@ -764,13 +766,18 @@ func (l *Lisp) run(input string) {
 			return
 		}
 		if mexp_count > 0 {
-			fmt.Print("\n")
+			fmt.Print("\n\n")
 		}
 		mexp_count++
 
 		xxx := l.echo.String()
-		xxx = strings.Trim(xxx, "\n")
-		// if echo_chkbx { fmt.Println(xxx + "\n") }
+		for strings.HasPrefix(xxx, "\n") {
+			xxx = xxx[1:]
+		}
+		for strings.HasSuffix(xxx, "\n") {
+			xxx = xxx[:len(xxx)-1]
+		}
+		fmt.Println(xxx + "\n")
 
 		if s.bad() {
 			l.out("expression", s.toS())

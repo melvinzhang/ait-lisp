@@ -780,12 +780,6 @@ func (l *Lisp) run(input string) {
 		mexp_count++
 
 		xxx := l.echo.String()
-		for strings.HasPrefix(xxx, "\n") {
-			xxx = xxx[1:]
-		}
-		for strings.HasSuffix(xxx, "\n") {
-			xxx = xxx[:len(xxx)-1]
-		}
 		fmt.Println(xxx + "\n")
 
 		if s.bad() {

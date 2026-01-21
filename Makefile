@@ -1,5 +1,8 @@
 SHELL = /bin/bash
 
+lisp2: src/lisp2.go
+	go build -o $@ $^
+:xa
 lisp: src/lisp.go
 	go build -o $@ $^
 

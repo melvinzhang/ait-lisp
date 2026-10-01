@@ -148,7 +148,8 @@ finding a larger expression at k = 430.
 `@m{...}` math, `@define-lisp[name]{...}` to show object code with its
 measured size, `@theorem` and `@proof`, and checks rendered with ✓ or ✗
 plus a final section listing them all. `racket -S src doc.scrbl` runs
-the checks; `make docs` renders HTML into `docs/`, which GitHub Pages serves.
+the checks; `make docs` renders HTML into `docs/`, which GitHub Pages serves,
+with `index.scrbl` as the front page.
 
 Showcases, each a document next to the program it ports:
 

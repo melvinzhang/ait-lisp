@@ -56,12 +56,15 @@
                               [onload "renderMathInElement(document.body)"])
                              ""))))
 
-;; Adds the page styles, then a final section listing every check.
+;; Adds the page styles, then a final section listing every check
+;; (left out of pages that run none).
 (define (ait-post-process doc)
   (define s (part-style doc))
   (struct-copy part doc
                [style (style (style-name s) (append page-properties (style-properties s)))]
-               [parts (append (part-parts doc) (list (checks-part)))]))
+               [parts (if (null? (checks))
+                          (part-parts doc)
+                          (append (part-parts doc) (list (checks-part))))]))
 
 (define (checks-part)
   (define cs (checks))
@@ -74,13 +77,11 @@
         (list (para (format "~a checks ran while this document was built; ~a."
                             (length cs)
                             (if (zero? failed) "all passed" (format "~a failed" failed))))
-              (if (null? cs)
-                  (para "")
-                  (tabular #:style (cls "AitChecks")
+              (tabular #:style (cls "AitChecks")
                            (for/list ([c cs])
                              (list (badge (check-ok? c))
                                    (element (cls "AitWhere") (check-where c))
-                                   (para (label-elem c) " " (detail-elem c)))))))
+                                   (para (label-elem c) " " (detail-elem c))))))
         '()))
 
 ;; --- Math ---

@@ -59,7 +59,7 @@ rkttests: $(wildcard */*.l)
 	for i in $(wildcard */*.scrbl); do racket -S src $$i > /dev/null || exit 1; done
 
 .PHONY: docs
-docs: $(wildcard */*.scrbl)
+docs: index.scrbl $(wildcard */*.scrbl)
 	for i in $^; do PLTCOLLECTS="$(CURDIR)/src:" raco scribble --html --dest docs $$i || exit 1; done
 
 runs: $(wildcard */*.l)

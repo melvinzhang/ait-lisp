@@ -47,6 +47,13 @@ download_ait:
 tests: $(wildcard */*.l)
 	for i in $^; do make -s $${i%.l}.test; done
 
+%.rkttest:
+	diff $*.r <(racket src/ait/run.rkt < $*.l)
+
+rkttests: $(wildcard */*.l)
+	raco make src/ait/run.rkt
+	for i in $^; do make -s $${i%.l}.rkttest; done
+
 runs: $(wildcard */*.l)
 	for i in $^; do ./lisp < $$i > $${i%.l}.r; done
 

@@ -118,3 +118,14 @@ The `try` function provides a sandboxed environment with resource limits.
 - **Return Format**:
     - `(success result displays)`: On successful completion.
     - `(failure reason displays)`: If `out-of-time` or `out-of-data` occurs.
+
+# Racket port
+
+`src/ait` is a Racket port of `src/lisp.go`. Its transcripts match the
+reference `.r` files exactly, including the eval/cons counters.
+
+* `racket src/ait/run.rkt < lm/godel.l` works like `./lisp < lm/godel.l`
+* `make rkttests` diffs every program against its `.r` file
+* `#lang ait/classic` followed by an unmodified `.l` program is a Racket
+  module that prints the same transcript; run it with
+  `racket -S src program.rkt` (or `raco pkg install --link src/ait` once)

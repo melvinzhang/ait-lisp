@@ -129,3 +129,17 @@ reference `.r` files exactly, including the eval/cons counters.
 * `#lang ait/classic` followed by an unmodified `.l` program is a Racket
   module that prints the same transcript; run it with
   `racket -S src program.rkt` (or `raco pkg install --link src/ait` once)
+
+`#lang ait` is Racket plus Chaitin LISP object code written `@lisp{...}`,
+with meta forms that measure, run and check it without changing it:
+
+* `size`, `bits`, `show`; `run`, `value`, `run-utm` (fresh machine per run)
+* holes: an atom `{name}` in object code; `plug`, `overhead` (size minus
+  holes), and `fix-overhead`, which fills `{overhead}` with the
+  context's own overhead
+* checks: `(expect actual ⇒ expected)`, `(bound lhs <= rhs)`, and
+  `(threshold program #:vary k #:over ks #:flips-at n)`
+
+`src/ait/tests/meta.rkt` shows them on `lm/godel.l`: the constant 410
+comes out of `fix-overhead`, and the threshold shows the search starts
+finding a larger expression at k = 430.

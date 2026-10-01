@@ -12,10 +12,16 @@
 ;; lists hold raw character codes / flags in their car, as in lisp.go.
 ;;
 ;; The machine is a single module-level instance; run-machine resets it.
+;; The API at the end (lisp-parse, lisp-run) runs a fresh machine per call
+;; and exchanges Racket data with it: exact integers for numbers, symbols
+;; for atoms, and lists for lists.
 
 (require racket/fixnum)
 
-(provide run-machine)
+(provide run-machine
+         lisp-parse
+         lisp-run
+         (struct-out outcome))
 
 ;; --- Constants ---
 
@@ -75,7 +81,11 @@
 
 (define in (current-input-port))
 (define out (current-output-port))
+;; How the machine stops; transcript mode follows lisp.go, API mode raises.
 (define halt void) ; escape continuation; replaces os.Exit in lisp.go
+(define on-overflow void)
+(define on-eof void)
+(define echo? #t)
 
 (define sym-nil 0) (define sym-true 0) (define sym-false 0)
 (define sym-define 0) (define sym-let 0) (define sym-lambda 0)
@@ -151,8 +161,7 @@
 
 (define (alloc!)
   (when (>= next-free SIZE)
-    (write-string "Storage overflow!\n" out)
-    (halt))
+    (on-overflow))
   (define a next-free)
   (set! next-free (add1 next-free))
   a)
@@ -296,9 +305,7 @@
 (define (get-char!)
   (define b (read-byte in))
   (when (eof-object? b)
-    (fprintf out "End of LISP Run\n\nCalls to eval = ~a\nCalls to cons = ~a\n"
-             time-eval next-free)
-    (halt))
+    (on-eof))
   b)
 
 ;; --- Parser ---
@@ -364,7 +371,7 @@
   (let loop ()
     (when (= in-word-buffer NIL)
       (set! in-word-buffer
-            (tokenize-line (λ () (let ([c (get-char!)]) (put-char c) c)) #t))
+            (tokenize-line (λ () (let ([c (get-char!)]) (when echo? (put-char c)) c)) #t))
       (loop)))
   (define word (car* in-word-buffer))
   (set! in-word-buffer (cdr* in-word-buffer))
@@ -687,6 +694,10 @@
 
 (define (reset! input output)
   (set! in input)
+  (set! halt void)
+  (set! on-overflow void)
+  (set! on-eof void)
+  (set! echo? #t)
   (set! out output)
   (set! object-list NIL)
   (set! next-free 0)
@@ -699,12 +710,35 @@
   (set! buffer2 NIL)
   (set! in-word-buffer NIL))
 
+;; Top-level define: binds the atom's global value.
+(define (top-define! e print?)
+  (define args (cdr* e))
+  (define nm (car* args))
+  (define def (car* (cdr* args)))
+  (define-values (sym val)
+    (if (atom? nm)
+        (values nm def)
+        (values (car* nm) (lst sym-lambda (cdr* nm) def))))
+  (when print?
+    (print! "define" sym)
+    (print! "value" val))
+  (set-car! (stack sym) val))
+
 ;; Reads a transcript program from input and writes the run to output,
 ;; exactly as `./lisp < input > output` does.
 (define (run-machine [input (current-input-port)] [output (current-output-port)])
   (reset! input output)
   (let/ec k
     (set! halt k)
+    (set! on-overflow
+          (λ ()
+            (write-string "Storage overflow!\n" out)
+            (halt)))
+    (set! on-eof
+          (λ ()
+            (fprintf out "End of LISP Run\n\nCalls to eval = ~a\nCalls to cons = ~a\n"
+                     time-eval next-free)
+            (halt)))
     (write-string "LISP Interpreter Run\n" out)
     (init!)
     (let loop ()
@@ -712,22 +746,104 @@
       (define e (read-top #t #f))
       (newline out)
       (cond
-        [(= (car* e) sym-define)
-         (define args (cdr* e))
-         (define nm (car* args))
-         (define def (car* (cdr* args)))
-         (cond
-           [(atom? nm)
-            (print! "define" nm)
-            (print! "value" def)
-            (set-car! (stack nm) def)]
-           [else
-            (define fn (lst sym-lambda (cdr* nm) def))
-            (print! "define" (car* nm))
-            (print! "value" fn)
-            (set-car! (stack (car* nm)) fn)])]
+        [(= (car* e) sym-define) (top-define! e #t)]
         [else
          (print! "expression" e)
          (print! "value" (ev e))])
       (loop)))
   (flush-output out))
+
+;; --- API: Racket data in and out of a fresh machine ---
+
+(define (call-with-fresh-machine input thunk)
+  (reset! input (current-output-port))
+  (set! echo? #f)
+  (set! on-overflow
+        (λ () (raise (exn:fail "ait: storage overflow" (current-continuation-marks)))))
+  (set! halt
+        (λ () (raise (exn:fail "ait: machine halted" (current-continuation-marks)))))
+  (init!)
+  (begin0 (thunk) (flush-output out)))
+
+(define (node->datum x)
+  (cond
+    [(number? x) (to-int x)]
+    [(= x NIL) '()]
+    [(atom? x) (string->symbol (name->string (name x)))]
+    [else
+     (let loop ([p x])
+       (if (atom? p) '() (cons (node->datum (car* p)) (loop (cdr* p)))))]))
+
+(define (name->string x)
+  (define o (open-output-string))
+  (serialize-name x (λ (c) (write-char (integer->char c) o)))
+  (get-output-string o))
+
+(define (datum->node d)
+  (cond
+    [(exact-nonnegative-integer? d) (mk-num! d)]
+    [(null? d) NIL]
+    [(symbol? d) (lookup-word (mk-string! (atom-name d)))]
+    [(and (pair? d) (list? d))
+     (let loop ([d d])
+       (if (null? d) NIL (let ([x (datum->node (car d))]) (kons x (loop (cdr d))))))]
+    [else
+     (raise-argument-error
+      'ait "a non-negative integer, symbol, or proper list of those" d)]))
+
+;; Atom names are what the reader can produce: printable, no parentheses.
+(define (atom-name sym)
+  (define s (symbol->string sym))
+  (unless (and (positive? (string-length s))
+               (for/and ([c (in-string s)])
+                 (and (char<? #\space c #\rubout) (not (memv c '(#\( #\)))))))
+    (raise-argument-error 'ait "an atom name of printable characters" sym))
+  s)
+
+;; Parses M-expression text into a list of S-expressions.
+(define (lisp-parse text)
+  (call-with-fresh-machine
+   (open-input-string (string-append text "\n"))
+   (λ ()
+     (let loop ([acc '()])
+       (define started? #f)
+       (define e
+         (let/ec k
+           (set! on-eof
+                 (λ ()
+                   (when started?
+                     (error 'lisp-parse "incomplete expression at end of: ~a" text))
+                   (k eof)))
+           (read-from (λ () (begin0 (in-word) (set! started? #t))) #t #f)))
+       (if (eof-object? e)
+           (reverse acc)
+           (loop (cons (node->datum e) acc)))))))
+
+;; The result of running an expression, as from try:
+;; status is 'success or 'failure; on failure value is the reason.
+(struct outcome (status value displays evals conses) #:transparent)
+
+;; Evaluates expr like a try, but in the top-level environment so that
+;; defs (a list of define forms) are visible. limit is a number of
+;; steps or #f for no limit; tape is the list of bits read-bit consumes.
+(define (lisp-run expr #:time [limit #f] #:tape [tape '()] #:defs [defs '()])
+  (call-with-fresh-machine
+   (open-input-bytes #"")
+   (λ ()
+     (for ([d (in-list defs)])
+       (top-define! (datum->node d) #f))
+     (define e (datum->node expr))
+     (set! tapes (lst (datum->node tape)))
+     (set! display-enabled (lst 0))
+     (define stub (lst 0))
+     (set-car! stub stub)
+     (set! captured-displays (lst stub))
+     (define d (if limit (mk-num! limit) sym-no-time-limit))
+     (define evals0 time-eval)
+     (define conses0 next-free)
+     (define v (ev* e d))
+     (outcome (if (< v 0) 'failure 'success)
+              (node->datum (if (< v 0) (- v) v))
+              (node->datum (cdr* stub))
+              (- time-eval evals0)
+              (- next-free conses0)))))

@@ -53,6 +53,9 @@ tests: $(wildcard */*.l)
 rkttests: $(wildcard */*.l)
 	raco make src/ait/run.rkt
 	for i in $^; do make -s $${i%.l}.rkttest; done
+	PLTCOLLECTS="$(CURDIR)/src:" raco make src/ait/tests/meta.rkt
+	racket -S src src/ait/tests/meta.rkt > /dev/null
+	PLTCOLLECTS="$(CURDIR)/src:" raco test -q src/ait/tests/meta.rkt
 
 runs: $(wildcard */*.l)
 	for i in $^; do ./lisp < $$i > $${i%.l}.r; done

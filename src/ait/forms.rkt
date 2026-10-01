@@ -17,7 +17,7 @@
          run value run-utm
          (struct-out outcome)
          holes plug overhead fix-overhead
-         expect bound threshold ⇒
+         expect bound property threshold ⇒
          report-summary!)
 
 ;; --- Object code ---
@@ -201,6 +201,34 @@
     (define r (rthunk))
     (record! (and (op l r) #t) where
              (format "~s = ~a ~a ~s = ~a" lform l opname rform r))))
+
+;; (property "claim" ([x seq] ...) body ...): body must hold for every
+;; combination, as in for*/and. Reports the first counterexample.
+(define-syntax (property stx)
+  (syntax-parse stx
+    [(_ claim:expr ([x:id seq:expr] ...) body:expr ...+)
+     #`(do-property claim
+                    (λ ()
+                      (let/ec k
+                        (define n 0)
+                        (for* ([x seq] ...)
+                          (set! n (add1 n))
+                          (unless (let () body ...)
+                            (k (list n (list (cons 'x x) ...)))))
+                        n))
+                    #,(where stx))]))
+
+(define (do-property claim thunk where)
+  (with-handlers ([exn:fail? (λ (e) (record! #f where (format "~a raised: ~a"
+                                                              claim (exn-message e))))])
+    (define r (thunk))
+    (if (number? r)
+        (record! #t where (format "~a  [~a cases]" claim r))
+        (record! #f where
+                 (format "~a  fails at case ~a: ~a" claim (car r)
+                         (string-join (for/list ([b (in-list (cadr r))])
+                                        (format "~a = ~a" (car b) (fmt (cdr b))))
+                                      ", "))))))
 
 ;; (threshold program #:vary k #:over ks): runs program for each k and
 ;; tabulates what it does, e.g. where an incompleteness argument starts

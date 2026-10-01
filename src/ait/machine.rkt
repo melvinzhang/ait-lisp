@@ -86,6 +86,7 @@
 (define on-overflow void)
 (define on-eof void)
 (define echo? #t)
+(define debugs #f) ; list of debugged nodes when captured, else #f
 
 (define sym-nil 0) (define sym-true 0) (define sym-false 0)
 (define sym-define 0) (define sym-let 0) (define sym-lambda 0)
@@ -573,7 +574,10 @@
         (set-cdr! old-end new-end)
         (set-car! stub-idx new-end)
         x])]
-    [(= code PRIM-DEBUG) (print! "debug" x)]
+    [(= code PRIM-DEBUG)
+     (cond
+       [debugs (set! debugs (cons x debugs)) x]
+       [else (print! "debug" x)])]
     [(= code PRIM-APPEND)
      (append-list (if (atom? x) NIL x) (let ([y (y)]) (if (atom? y) NIL y)))]
     [(= code PRIM-LENGTH) (mk-num! (lisp-length x))]
@@ -698,6 +702,7 @@
   (set! on-overflow void)
   (set! on-eof void)
   (set! echo? #t)
+  (set! debugs #f)
   (set! out output)
   (set! object-list NIL)
   (set! next-free 0)
@@ -821,7 +826,8 @@
 
 ;; The result of running an expression, as from try:
 ;; status is 'success or 'failure; on failure value is the reason.
-(struct outcome (status value displays evals conses) #:transparent)
+;; debugs are the values passed to debug, in order.
+(struct outcome (status value displays debugs evals conses) #:transparent)
 
 ;; Evaluates expr like a try, but in the top-level environment so that
 ;; defs (a list of define forms) are visible. limit is a number of
@@ -839,11 +845,13 @@
      (set-car! stub stub)
      (set! captured-displays (lst stub))
      (define d (if limit (mk-num! limit) sym-no-time-limit))
+     (set! debugs '())
      (define evals0 time-eval)
      (define conses0 next-free)
      (define v (ev* e d))
      (outcome (if (< v 0) 'failure 'success)
               (node->datum (if (< v 0) (- v) v))
               (node->datum (cdr* stub))
+              (map node->datum (reverse debugs))
               (- time-eval evals0)
               (- next-free conses0)))))

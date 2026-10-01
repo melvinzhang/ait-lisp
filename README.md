@@ -143,3 +143,12 @@ with meta forms that measure, run and check it without changing it:
 `src/ait/tests/meta.rkt` shows them on `lm/godel.l`: the constant 410
 comes out of `fix-overhead`, and the threshold shows the search starts
 finding a larger expression at k = 430.
+
+Showcases, each next to the program it ports:
+
+* `lm/godel.rkt`: derives godel.l's constant 410, checks that the
+  expression's size is size(FAS) + 410 for any FAS, and shows the
+  searcher refuting a FAS that claims a too-large expression is elegant
+* `ait/kraft.rkt`: checks kraft.l's claims (requirements met when the
+  Kraft inequality holds, prefix-free programs, never changing its mind,
+  and the free-pool "key fact") on 300 random requirement lists

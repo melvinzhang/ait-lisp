@@ -8,7 +8,11 @@
 
 (provide (except-out (all-from-out racket/base) #%module-begin)
          (except-out (all-from-out "forms.rkt") report-summary!)
-         (rename-out [ait-module-begin #%module-begin]))
+         (rename-out [ait-module-begin #%module-begin])
+         #%ait-check)
+
+;; Checks print as they run.
+(define (#%ait-check c) (print-check c))
 
 (define-syntax-rule (ait-module-begin form ...)
   (#%module-begin

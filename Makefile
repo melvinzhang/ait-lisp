@@ -56,7 +56,11 @@ rkttests: $(wildcard */*.l)
 	PLTCOLLECTS="$(CURDIR)/src:" raco make src/ait/tests/meta.rkt
 	racket -S src src/ait/tests/meta.rkt > /dev/null
 	PLTCOLLECTS="$(CURDIR)/src:" raco test -q src/ait/tests/meta.rkt
-	for i in $(wildcard */*.rkt); do racket -S src $$i > /dev/null || exit 1; done
+	for i in $(wildcard */*.scrbl); do racket -S src $$i > /dev/null || exit 1; done
+
+.PHONY: docs
+docs: $(wildcard */*.scrbl)
+	for i in $^; do PLTCOLLECTS="$(CURDIR)/src:" raco scribble --html --dest docs $$i || exit 1; done
 
 runs: $(wildcard */*.l)
 	for i in $^; do ./lisp < $$i > $${i%.l}.r; done

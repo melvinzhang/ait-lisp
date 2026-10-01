@@ -1,0 +1,20 @@
+/* Styles for #lang ait/scribble documents. */
+.AitCode { margin: 1em 0 1em 1.5em; padding: 0.5em 0.8em; background: #f6f6f2; border-left: 3px solid #b8b8a8; overflow-x: auto; }
+.AitCode .stt, .AitCode .hspace { font-size: 0.9em; }
+.AitCode p { margin: 0; }
+.AitCode p.AitCaption, .AitCaption { margin: 0.5em 0 0 0; font-size: 0.85em; color: #666; }
+.AitCheck { margin: 0.3em 0 0.3em 1.5em; }
+.AitPass { color: #1a7f37; font-weight: bold; }
+.AitFail { color: #c62828; font-weight: bold; }
+.AitWhere { color: #888; font-size: 0.85em; padding: 0 0.8em; white-space: nowrap; }
+.AitTheorem { margin: 1em 0; padding: 0.6em 1em; border: 1px solid #c9c9bd; background: #fbfbf7; }
+.AitProof { margin: 1em 0; }
+.AitThreshold { margin: 1em 0 1em 1.5em; }
+.AitTable td { padding: 0.15em 1.2em 0.15em 0; }
+.AitChecks td { padding: 0.15em 0.4em; vertical-align: top; }
+.AitDisplayMath { text-align: center; }
+@media (prefers-color-scheme: dark) {
+  .AitCode { background: #26261f; border-left-color: #6a6a5a; }
+  .AitTheorem { background: #22221c; border-color: #55554a; }
+}
+.AitCheck, .AitChecks td { overflow-wrap: anywhere; }

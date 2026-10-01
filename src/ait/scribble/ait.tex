@@ -1,0 +1,12 @@
+% Styles for #lang ait/scribble documents.
+\usepackage{xcolor}
+\newcommand{\AitPass}[1]{\textcolor[rgb]{0.1,0.5,0.2}{\textbf{#1}}}
+\newcommand{\AitFail}[1]{\textcolor[rgb]{0.78,0.16,0.16}{\textbf{#1}}}
+\newcommand{\AitWhere}[1]{{\footnotesize #1}}
+\newcommand{\AitCaption}[1]{{\footnotesize #1}}
+\newcommand{\AitCheck}[1]{#1}
+\newcommand{\AitDisplayMath}[1]{#1}
+\newenvironment{AitCode}{\begin{quote}}{\end{quote}}
+\newenvironment{AitTheorem}{\begin{quote}}{\end{quote}}
+\newenvironment{AitProof}{}{}
+\newenvironment{AitThreshold}{\begin{quote}}{\end{quote}}

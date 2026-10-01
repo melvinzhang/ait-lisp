@@ -18,7 +18,7 @@
          (struct-out outcome)
          holes plug overhead fix-overhead
          expect bound property threshold ⇒
-         report-summary!)
+         (struct-out check) checks print-check report-summary!)
 
 ;; --- Object code ---
 
@@ -141,17 +141,48 @@
   (substitute k (λ (s) (and (eq? (hole-name s) hole) (cons s v)))))
 
 ;; --- Checks ---
+;;
+;; Each check form evaluates to a check result passed to #%ait-check,
+;; resolved where the form is used. Each language binds it: #lang ait
+;; prints the result, #lang ait/scribble renders it into the document.
+
+;; kind: 'expect, 'bound, 'property or 'threshold
+;; ok?: #t, #f, or 'none for a threshold with nothing to check
+;; label: what was checked; detail: what came out
+;; table: for a threshold, (list variable explanation rows) where each
+;;        row is (list k program-size observation-string)
+(struct check (kind ok? where label detail table) #:transparent)
 
 (define results '())
 
-(define (record! ok? where msg)
-  (set! results (cons ok? results))
-  (printf "~a ~a  ~a\n" (if ok? "✓" "✗") where msg))
+(define (record! c)
+  (unless (eq? 'none (check-ok? c))
+    (set! results (cons c results)))
+  c)
 
-(define (report-summary!)
-  (define failed (count not results))
-  (printf "\n~a checks, ~a failed\n" (length results) failed)
-  (unless (zero? failed) (exit 1)))
+(define (checks) (reverse results))
+
+(define (print-check c [out (current-output-port)])
+  (define (line ok?)
+    (fprintf out "~a ~a  ~a~a\n" (if ok? "✓" "✗") (check-where c) (check-label c)
+             (if (string=? "" (check-detail c)) "" (string-append " " (check-detail c)))))
+  (cond
+    [(check-table c)
+     (define-values (kname explain rows) (apply values (check-table c)))
+     (fprintf out "\n~a  threshold over ~a\n" (check-where c) kname)
+     (when explain (fprintf out "   ~a\n" explain))
+     (for ([r (in-list rows)])
+       (fprintf out "   ~a = ~a   size ~a   ⇒ ~a\n" kname (car r) (cadr r) (caddr r)))
+     (unless (eq? 'none (check-ok? c)) (line (check-ok? c)))]
+    [else (line (check-ok? c))]))
+
+(define (report-summary! #:list-failures? [list-failures? #f])
+  (define failed (filter (λ (c) (not (check-ok? c))) (checks)))
+  (when list-failures?
+    (for-each print-check failed))
+  (printf "~a~a checks, ~a failed\n"
+          (if list-failures? "" "\n") (length (checks)) (length failed))
+  (unless (null? failed) (exit 1)))
 
 (define (fmt v)
   (if (or (null? v) (symbol? v) (exact-nonnegative-integer? v)
@@ -169,66 +200,80 @@
             (if (path? src)
                 (let-values ([(_ name __) (split-path src)]) (path->string name))
                 "?")
-            (or (syntax-line stx) "?"))))
+            (or (syntax-line stx) "?")))
+  (define (hook stx) (datum->syntax stx '#%ait-check)))
+
+;; Shows a form as written, with 'x rather than (quote x).
+(define (form->string form)
+  (define o (open-output-string))
+  (parameterize ([print-as-expression #f] [print-reader-abbreviations #t])
+    (print form o))
+  (get-output-string o))
+
+(define (failed kind where label e)
+  (record! (check kind #f where label (format "raised: ~a" (exn-message e)) #f)))
 
 ;; (expect actual ⇒ expected): actual must be equal? to expected.
 (define-syntax (expect stx)
   (syntax-parse stx
     #:literals (⇒ =>)
-    [(_ actual (~or ⇒ =>) expected)
-     #`(do-expect 'actual (λ () actual) expected #,(where stx))]))
+    [(_ actual (~or ⇒ =>) expected (~optional (~seq #:label label:expr)
+                                              #:defaults ([label #'#f])))
+     #`(#,(hook stx) (do-expect (or label (form->string 'actual))
+                                (λ () actual) expected #,(where stx)))]))
 
-(define (do-expect form thunk expected where)
-  (with-handlers ([exn:fail? (λ (e) (record! #f where (format "~s raised: ~a"
-                                                              form (exn-message e))))])
+(define (do-expect label thunk expected where)
+  (with-handlers ([exn:fail? (λ (e) (failed 'expect where label e))])
     (define actual (thunk))
-    (if (equal? actual expected)
-        (record! #t where (format "~s ⇒ ~a" form (fmt actual)))
-        (record! #f where (format "~s ⇒ ~a, expected ~a"
-                                  form (fmt actual) (fmt expected))))))
+    (record! (check 'expect (equal? actual expected) where label
+                    (if (equal? actual expected)
+                        (format "⇒ ~a" (fmt actual))
+                        (format "⇒ ~a, expected ~a" (fmt actual) (fmt expected)))
+                    #f))))
 
 ;; (bound lhs op rhs): a numeric inequality, reported with its values.
 (define-syntax (bound stx)
   (syntax-parse stx
-    [(_ lhs op:id rhs)
-     #`(do-bound 'lhs (λ () lhs) 'op op 'rhs (λ () rhs) #,(where stx))]))
+    [(_ lhs op:id rhs (~optional (~seq #:label label:expr) #:defaults ([label #'#f])))
+     #`(#,(hook stx) (do-bound (or label (string-join (map form->string (list 'lhs 'op 'rhs)) " "))
+                               (λ () lhs) 'op op (λ () rhs) #,(where stx)))]))
 
-(define (do-bound lform lthunk opname op rform rthunk where)
-  (with-handlers ([exn:fail? (λ (e) (record! #f where (format "~s ~a ~s raised: ~a"
-                                                              lform opname rform
-                                                              (exn-message e))))])
+(define (do-bound label lthunk opname op rthunk where)
+  (with-handlers ([exn:fail? (λ (e) (failed 'bound where label e))])
     (define l (lthunk))
     (define r (rthunk))
-    (record! (and (op l r) #t) where
-             (format "~s = ~a ~a ~s = ~a" lform l opname rform r))))
+    (record! (check 'bound (and (op l r) #t) where label
+                    (format "[~a ~a ~a]" l opname r) #f))))
 
 ;; (property "claim" ([x seq] ...) body ...): body must hold for every
 ;; combination, as in for*/and. Reports the first counterexample.
 (define-syntax (property stx)
   (syntax-parse stx
     [(_ claim:expr ([x:id seq:expr] ...) body:expr ...+)
-     #`(do-property claim
-                    (λ ()
-                      (let/ec k
-                        (define n 0)
-                        (for* ([x seq] ...)
-                          (set! n (add1 n))
-                          (unless (let () body ...)
-                            (k (list n (list (cons 'x x) ...)))))
-                        n))
-                    #,(where stx))]))
+     #`(#,(hook stx)
+        (do-property claim
+                     (λ ()
+                       (let/ec k
+                         (define n 0)
+                         (for* ([x seq] ...)
+                           (set! n (add1 n))
+                           (unless (let () body ...)
+                             (k (list n (list (cons 'x x) ...)))))
+                         n))
+                     #,(where stx)))]))
 
 (define (do-property claim thunk where)
-  (with-handlers ([exn:fail? (λ (e) (record! #f where (format "~a raised: ~a"
-                                                              claim (exn-message e))))])
+  (with-handlers ([exn:fail? (λ (e) (failed 'property where claim e))])
     (define r (thunk))
-    (if (number? r)
-        (record! #t where (format "~a  [~a cases]" claim r))
-        (record! #f where
-                 (format "~a  fails at case ~a: ~a" claim (car r)
-                         (string-join (for/list ([b (in-list (cadr r))])
-                                        (format "~a = ~a" (car b) (fmt (cdr b))))
-                                      ", "))))))
+    (record!
+     (if (number? r)
+         (check 'property #t where claim (format "[~a cases]" r) #f)
+         (check 'property #f where claim
+                (format "fails at case ~a: ~a" (car r)
+                        (string-join (for/list ([b (in-list (cadr r))])
+                                       (format "~a = ~a" (car b) (fmt (cdr b))))
+                                     ", "))
+                #f)))))
 
 ;; (threshold program #:vary k #:over ks): runs program for each k and
 ;; tabulates what it does, e.g. where an incompleteness argument starts
@@ -246,7 +291,8 @@
               (~optional (~seq #:explain explain:expr)
                          #:defaults ([explain #'#f])))
         ...)
-     #`(do-threshold 'k (λ (k) program) ks observe time n explain #,(where stx))]))
+     #`(#,(hook stx)
+        (do-threshold 'k (λ (k) program) ks observe time n explain #,(where stx)))]))
 
 (define (default-observe o)
   (if (eq? 'success (outcome-status o))
@@ -254,18 +300,21 @@
       (list 'failure (outcome-value o))))
 
 (define (do-threshold kname make ks observe time flip explain where)
-  (printf "\n~a  threshold over ~a ∈ ~a\n" where kname (show ks))
-  (when explain (printf "   ~a\n" explain))
-  (define rows
-    (for/list ([k (in-list ks)])
-      (define p (make k))
-      (define obs (observe (run p #:time time)))
-      (printf "   ~a = ~a   size ~a   ⇒ ~a\n" kname k (size p) (fmt obs))
-      (cons k obs)))
-  (when flip
-    (define-values (below above) (partition (λ (r) (< (car r) flip)) rows))
-    (define (same? rs) (or (null? rs) (andmap (λ (r) (equal? (cdr r) (cdar rs))) rs)))
-    (record! (and (pair? below) (pair? above) (same? below) (same? above)
-                  (not (equal? (cdar below) (cdar above))))
-             where
-             (format "behaviour flips at ~a = ~a" kname flip))))
+  (define label (format "behaviour flips at ~a = ~a" kname flip))
+  (with-handlers ([exn:fail? (λ (e) (failed 'threshold where label e))])
+    (define rows
+      (for/list ([k (in-list ks)])
+        (define p (make k))
+        (list k (size p) (observe (run p #:time time)))))
+    (define ok?
+      (cond
+        [(not flip) 'none]
+        [else
+         (define-values (below above) (partition (λ (r) (< (car r) flip)) rows))
+         (define (same? rs)
+           (andmap (λ (r) (equal? (caddr r) (caddr (car rs)))) rs))
+         (and (pair? below) (pair? above) (same? below) (same? above)
+              (not (equal? (caddr (car below)) (caddr (car above)))))]))
+    (record! (check 'threshold ok? where (if flip label "") ""
+                    (list kname explain
+                          (for/list ([r rows]) (list (car r) (cadr r) (fmt (caddr r)))))))))

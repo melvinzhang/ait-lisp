@@ -1,4 +1,7 @@
 /* Styles for #lang ait/scribble documents. */
+/* Scribble's own styles are light only, so these pages stay light. */
+:root { color-scheme: light; }
+body { background: #fff; color: #000; }
 .AitCode { margin: 1em 0 1em 1.5em; padding: 0.5em 0.8em; background: #f6f6f2; border-left: 3px solid #b8b8a8; overflow-x: auto; }
 .AitCode .stt, .AitCode .hspace { font-size: 0.9em; }
 .AitCode p { margin: 0; }
@@ -13,10 +16,6 @@
 .AitTable td { padding: 0.15em 1.2em 0.15em 0; }
 .AitChecks td { padding: 0.15em 0.4em; vertical-align: top; }
 .AitDisplayMath { text-align: center; }
-@media (prefers-color-scheme: dark) {
-  .AitCode { background: #26261f; border-left-color: #6a6a5a; }
-  .AitTheorem { background: #22221c; border-color: #55554a; }
-}
 .AitCheck, .AitChecks td { overflow-wrap: anywhere; }
 /* Phones: Scribble's layout is a fixed 43em column beside a 15em table
    of contents. Stack them and let the column fill the screen instead. */

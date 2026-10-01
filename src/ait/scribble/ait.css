@@ -18,3 +18,12 @@
   .AitTheorem { background: #22221c; border-color: #55554a; }
 }
 .AitCheck, .AitChecks td { overflow-wrap: anywhere; }
+/* Phones: Scribble's layout is a fixed 43em column beside a 15em table
+   of contents. Stack them and let the column fill the screen instead. */
+@media (max-width: 760px) {
+  .maincolumn { width: auto; margin: 0 16px; }
+  .tocset { float: none; width: auto; margin: 0 16px 1em 16px; }
+  .AitCode, .AitCheck, .AitThreshold { margin-left: 0; }
+  .AitCode pre, .AitCode table { max-width: 100%; }
+  .AitTable, .AitChecks { display: block; overflow-x: auto; }
+}
